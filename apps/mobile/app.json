@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Cascadex",
+    "slug": "cascadex",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "cascadex",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020408"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cascadex.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Cascadex needs camera access to scan medication barcodes"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#020408"
+      },
+      "package": "com.cascadex.app",
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Cascadex to scan medication barcodes"
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}
