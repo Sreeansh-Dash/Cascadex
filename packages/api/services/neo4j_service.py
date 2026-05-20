@@ -288,6 +288,203 @@ class Neo4jService:
         interactions.sort(key=lambda x: severity_order.get(x.get("severity", "minor"), 3))
         return interactions
 
+    # ----------------------------------------------------------------
+    # CHAIN DETAIL: Full interaction chain for a specific drug pair
+    # ----------------------------------------------------------------
+    async def get_chain_detail(
+        self, perpetrator_id: str, victim_id: str, enzyme_name: str
+    ) -> dict | None:
+        """
+        Full chain traversal for a specific drug-drug interaction.
+
+        Walks the path: Drug1 -[INHIBITS|INDUCES]-> Enzyme <-[SUBSTRATE_OF]- Drug2,
+        then continues: Drug2 -[PRODUCES]-> Metabolite -[ACTIVATES|INHIBITS]-> Receptor.
+        Returns the complete path data including downstream metabolite/receptor effects.
+        """
+        query = """
+        MATCH (d1:Drug {drugbank_id: $perpetratorId})
+              -[r1:INHIBITS|INDUCES]->(e:Enzyme {name: $enzymeName})
+              <-[r2:SUBSTRATE_OF]-(d2:Drug {drugbank_id: $victimId})
+        OPTIONAL MATCH (d2)-[r3:PRODUCES]->(met:Metabolite)
+                       -[r4:ACTIVATES|INHIBITS]->(rec:Receptor)
+        RETURN
+            d1.name AS perpetrator,
+            d1.drugbank_id AS perpetrator_id,
+            d1.class AS perpetrator_class,
+            type(r1) AS interaction_type,
+            r1.strength AS interaction_strength,
+            e.name AS enzyme,
+            e.family AS enzyme_family,
+            d2.name AS victim,
+            d2.drugbank_id AS victim_id,
+            d2.class AS victim_class,
+            collect(DISTINCT CASE WHEN met IS NOT NULL THEN {
+                metabolite: met.name,
+                active: met.active,
+                toxicity_threshold: met.toxicity_threshold,
+                receptor: rec.name,
+                receptor_effect: rec.effect,
+                receptor_action: type(r4),
+                risk_category: rec.risk_category
+            } END) AS downstream_effects
+        """
+        async with self.driver.session() as session:
+            result = await session.run(
+                query,
+                perpetratorId=perpetrator_id,
+                victimId=victim_id,
+                enzymeName=enzyme_name,
+            )
+            record = await result.single()
+            if not record:
+                return None
+            data = record.data()
+            # Filter out null entries from downstream_effects
+            data["downstream_effects"] = [
+                e for e in data.get("downstream_effects", []) if e is not None
+            ]
+            return data
+
+    # ----------------------------------------------------------------
+    # ENZYME DETAIL: Enzyme info + related drugs
+    # ----------------------------------------------------------------
+    async def get_enzyme_detail(self, enzyme_name: str) -> Optional[dict]:
+        """
+        Return enzyme info plus all drugs that are substrates of it
+        and all drugs that inhibit or induce it.
+
+        Uses traversal: Enzyme <-[SUBSTRATE_OF]- Drug (substrates)
+                        Enzyme <-[INHIBITS|INDUCES]- Drug (perpetrators)
+        """
+        query = """
+        MATCH (e:Enzyme {name: $enzymeName})
+        OPTIONAL MATCH (e)<-[:SUBSTRATE_OF]-(substrate:Drug)
+        OPTIONAL MATCH (e)<-[perp_rel:INHIBITS|INDUCES]-(perpetrator:Drug)
+        RETURN
+            e.name AS name,
+            e.family AS family,
+            collect(DISTINCT CASE WHEN substrate IS NOT NULL THEN {
+                drugbank_id: substrate.drugbank_id,
+                name: substrate.name,
+                class: substrate.class
+            } END) AS substrates,
+            collect(DISTINCT CASE WHEN perpetrator IS NOT NULL THEN {
+                drugbank_id: perpetrator.drugbank_id,
+                name: perpetrator.name,
+                class: perpetrator.class,
+                action: type(perp_rel),
+                strength: perp_rel.strength
+            } END) AS perpetrators
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query, enzymeName=enzyme_name)
+            record = await result.single()
+            if not record:
+                return None
+            data = record.data()
+            data["substrates"] = [s for s in data.get("substrates", []) if s is not None]
+            data["perpetrators"] = [p for p in data.get("perpetrators", []) if p is not None]
+            return data
+
+    # ----------------------------------------------------------------
+    # FULLTEXT DRUG SEARCH
+    # ----------------------------------------------------------------
+    async def search_drugs_fulltext(self, query_text: str) -> list:
+        """
+        Search drugs by name using fulltext index if available,
+        otherwise fall back to case-insensitive CONTAINS matching.
+        Returns top 10 matches.
+        """
+        # Try fulltext index first
+        fulltext_query = """
+        CALL db.index.fulltext.queryNodes('drug_name_fulltext', $query)
+        YIELD node, score
+        RETURN node {.*, score: score} AS drug
+        LIMIT 10
+        """
+        fallback_query = """
+        MATCH (d:Drug)
+        WHERE toLower(d.name) CONTAINS toLower($query)
+        RETURN d {.*} AS drug
+        LIMIT 10
+        """
+        async with self.driver.session() as session:
+            try:
+                result = await session.run(fulltext_query, query=query_text)
+                records = [record.data()["drug"] async for record in result]
+                if records:
+                    return records
+            except Exception:
+                pass
+            # Fallback to CONTAINS
+            result = await session.run(fallback_query, query=query_text)
+            return [record.data()["drug"] async for record in result]
+
+    # ----------------------------------------------------------------
+    # ALL PATIENTS: With medication and interaction counts
+    # ----------------------------------------------------------------
+    async def get_all_patients(self) -> list:
+        """
+        Return all patients with their medication count and interaction count.
+
+        Uses traversal to count TAKES edges and multi-hop interaction paths.
+        """
+        query = """
+        MATCH (p:Patient)
+        OPTIONAL MATCH (p)-[:TAKES]->(d:Drug)
+        WITH p, count(DISTINCT d) AS med_count
+        OPTIONAL MATCH (p)-[:TAKES]->(d1:Drug)
+                       -[:INHIBITS|INDUCES]->(e:Enzyme)
+                       <-[:SUBSTRATE_OF]-(d2:Drug)
+                       <-[:TAKES]-(p)
+        WHERE d1 <> d2
+        WITH p, med_count, count(DISTINCT d1.drugbank_id + ':' + d2.drugbank_id + ':' + e.name) AS interaction_count
+        RETURN
+            p.id AS id,
+            p.age_range AS age_range,
+            p.weight_range AS weight_range,
+            p.created_at AS created_at,
+            med_count,
+            interaction_count
+        ORDER BY interaction_count DESC
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query)
+            return [record.data() async for record in result]
+
+    # ----------------------------------------------------------------
+    # HIGH-RISK PATIENTS: At least one 'strong' strength interaction
+    # ----------------------------------------------------------------
+    async def get_high_risk_patients(self) -> list:
+        """
+        Return patients that have at least one interaction chain
+        with 'strong' strength, indicating high clinical risk.
+
+        Uses traversal through the full interaction path to check
+        relationship strength properties.
+        """
+        query = """
+        MATCH (p:Patient)-[:TAKES]->(d1:Drug)
+              -[r:INHIBITS|INDUCES]->(e:Enzyme)
+              <-[:SUBSTRATE_OF]-(d2:Drug)
+              <-[:TAKES]-(p)
+        WHERE d1 <> d2 AND r.strength = 'strong'
+        WITH p, count(DISTINCT d1.drugbank_id + ':' + d2.drugbank_id + ':' + e.name) AS strong_interactions
+        OPTIONAL MATCH (p)-[:TAKES]->(d:Drug)
+        WITH p, strong_interactions, count(DISTINCT d) AS med_count
+        RETURN
+            p.id AS id,
+            p.age_range AS age_range,
+            p.weight_range AS weight_range,
+            p.created_at AS created_at,
+            med_count,
+            strong_interactions
+        ORDER BY strong_interactions DESC
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query)
+            return [record.data() async for record in result]
+
 
 # Singleton instance
 neo4j_service = Neo4jService()

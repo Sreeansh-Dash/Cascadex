@@ -32,15 +32,20 @@ async def explain_chain(chain_id: str):
             detail="Invalid chain ID. Use 'perpetrator_id:victim_id:enzyme_name'",
         )
 
-    chain_data = {
-        "perpetrator_id": parts[0],
-        "victim_id": parts[1],
-        "enzyme_name": parts[2],
-        "chain_id": chain_id,
-    }
+    perpetrator_id, victim_id, enzyme_name = parts
+
+    # Fetch real chain data from Neo4j graph traversal
+    chain_data = await neo4j_service.get_chain_detail(
+        perpetrator_id, victim_id, enzyme_name
+    )
+    if not chain_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Interaction chain '{chain_id}' not found in graph",
+        )
 
     explanation = await groq_service.explain_interaction_chain(chain_data)
-    result = {"chain_id": chain_id, "explanation": explanation}
+    result = {"chain_id": chain_id, "explanation": explanation, "chain_data": chain_data}
 
     # Cache for 1 hour — explanations don't change
     cache_service.set(cache_key, result, ttl=3600)

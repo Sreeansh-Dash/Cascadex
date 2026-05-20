@@ -4,14 +4,15 @@ Cascadex API — Graph Router.
 Endpoints for full graph visualization data.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from ..services.neo4j_service import neo4j_service
+from ..models.graph import PatientGraph
 
 router = APIRouter()
 
 
-@router.get("/{patient_id}")
+@router.get("/{patient_id}", response_model=PatientGraph)
 async def get_graph(patient_id: str):
     """
     Get the full graph data (nodes + edges) for graph visualization.
@@ -37,3 +38,18 @@ async def get_enzyme_blast_radius(patient_id: str, enzyme_name: str):
         "affected_drugs_count": len(blast_radius),
         "downstream_effects": blast_radius,
     }
+
+
+@router.get("/{patient_id}/enzyme/{enzyme_name}/detail")
+async def get_enzyme_detail(patient_id: str, enzyme_name: str):
+    """
+    Get detailed enzyme info including all substrate drugs and perpetrator drugs.
+    Provides a complete view of an enzyme's role in the interaction network.
+    """
+    detail = await neo4j_service.get_enzyme_detail(enzyme_name)
+    if not detail:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Enzyme '{enzyme_name}' not found in graph",
+        )
+    return detail

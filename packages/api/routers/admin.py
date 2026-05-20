@@ -25,19 +25,7 @@ async def list_patients():
     List all patients with their medication count and risk scores.
     Used by Base44 portal Patient Risk Dashboard.
     """
-    query = """
-    MATCH (p:Patient)
-    OPTIONAL MATCH (p)-[:TAKES]->(d:Drug)
-    WITH p, count(d) AS drug_count
-    RETURN p.id AS id,
-           p.age_range AS age_range,
-           drug_count,
-           p.created_at AS created_at
-    ORDER BY drug_count DESC
-    """
-    async with neo4j_service.driver.session() as session:
-        result = await session.run(query)
-        patients = [record.data() async for record in result]
+    patients = await neo4j_service.get_all_patients()
 
     # Enrich with interaction alerts count
     for patient in patients:
@@ -68,9 +56,8 @@ async def admin_get_patient_graph(patient_id: str):
 
 @router.get("/high-risk")
 async def get_high_risk_patients():
-    """Get patients with critical interaction alerts."""
-    all_patients = await list_patients()
-    return [p for p in all_patients if p.get("critical_alerts", 0) > 0]
+    """Get patients with at least one 'strong' strength interaction."""
+    return await neo4j_service.get_high_risk_patients()
 
 
 @router.post("/prescribe-check")

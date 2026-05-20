@@ -22,19 +22,22 @@ async def get_interactions(patient_id: str):
 @router.get("/chain/{chain_id}")
 async def get_chain_detail(chain_id: str):
     """
-    Get a single interaction chain's full detail.
-    Note: chain_id is constructed as 'perpetrator_id:victim_id:enzyme_name'.
+    Get a single interaction chain's full detail via graph traversal.
+    chain_id format: 'perpetrator_id:victim_id:enzyme_name'
+    Returns full path: Drug → Enzyme → Drug → Metabolite → Receptor.
     """
     parts = chain_id.split(":")
     if len(parts) != 3:
         raise HTTPException(status_code=400, detail="Invalid chain ID format. Use 'perpetrator_id:victim_id:enzyme_name'")
 
-    # For now, return the chain_id parsed — full implementation will fetch from graph
+    perpetrator_id, victim_id, enzyme_name = parts
+    chain_data = await neo4j_service.get_chain_detail(perpetrator_id, victim_id, enzyme_name)
+    if not chain_data:
+        raise HTTPException(status_code=404, detail=f"Interaction chain '{chain_id}' not found in graph")
+
     return {
         "chain_id": chain_id,
-        "perpetrator_id": parts[0],
-        "victim_id": parts[1],
-        "enzyme_name": parts[2],
+        **chain_data,
     }
 
 
