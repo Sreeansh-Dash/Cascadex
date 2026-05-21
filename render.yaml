@@ -12,15 +12,27 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      # --- Neo4j AuraDB ---
       - key: NEO4J_URI
         sync: false
       - key: NEO4J_USER
         sync: false
       - key: NEO4J_PASSWORD
         sync: false
+      # --- Groq ---
       - key: GROQ_API_KEY
         sync: false
+      # --- External APIs ---
+      - key: FDA_API_BASE
+        value: https://api.fda.gov
+      - key: RXNORM_API_BASE
+        value: https://rxnav.nlm.nih.gov/REST
+      - key: KEGG_API_BASE
+        value: https://rest.kegg.jp
+      # --- App ---
       - key: ENVIRONMENT
         value: production
+      - key: API_SECRET_KEY
+        sync: false
       - key: PYTHON_VERSION
-        value: "3.13.0"
+        value: "3.12.8"

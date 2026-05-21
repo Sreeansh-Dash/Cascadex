@@ -1,17 +1,17 @@
 """
 Cascadex API — In-Memory Cache Service.
 
-Simple TTL-based cache for graph query results to reduce Neo4j load.
+Simple TTL-based cache for graph query results and Groq explanations.
 Uses an in-memory dict with expiry timestamps.
 Can be swapped for Redis in production.
 """
 
 import time
-from typing import Any, Optional
+from typing import Any, Callable, Coroutine, Optional
 
 
 class CacheService:
-    """Simple in-memory TTL cache."""
+    """Simple in-memory TTL cache with async helper."""
 
     def __init__(self, default_ttl: int = 300):
         """
@@ -49,6 +49,31 @@ class CacheService:
         keys_to_remove = [k for k in self._store if patient_id in k]
         for k in keys_to_remove:
             del self._store[k]
+
+    async def get_or_set(
+        self,
+        key: str,
+        async_fn: Callable[[], Coroutine[Any, Any, Any]],
+        ttl: int = None,
+    ) -> Any:
+        """
+        Check cache first; on miss, call async_fn(), cache the result, return it.
+        This is the primary helper for wiring cache into async service calls.
+        """
+        cached = self.get(key)
+        if cached is not None:
+            return cached
+        value = await async_fn()
+        self.set(key, value, ttl=ttl)
+        return value
+
+    @property
+    def stats(self) -> dict:
+        """Return cache statistics for debugging."""
+        now = time.time()
+        total = len(self._store)
+        alive = sum(1 for _, (_, exp) in self._store.items() if exp > now)
+        return {"total_entries": total, "alive_entries": alive, "expired_entries": total - alive}
 
 
 # Singleton instance

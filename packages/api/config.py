@@ -3,10 +3,29 @@ Cascadex API — Application Configuration.
 
 Loads settings from environment variables using pydantic-settings.
 All external service URIs, API keys, and app settings are defined here.
+
+The .env file is resolved relative to this file's location, walking up to
+the project root. This works in all contexts: local dev, Docker, CI, and Render.
 """
+
+import pathlib
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+
+def _find_env_file() -> str | None:
+    """
+    Walk up from this file to find .env in an ancestor directory.
+    Works whether uvicorn is started from packages/api/ or from project root.
+    """
+    current = pathlib.Path(__file__).resolve().parent
+    for _ in range(5):  # Check up to 5 levels up
+        candidate = current / ".env"
+        if candidate.exists():
+            return str(candidate)
+        current = current.parent
+    return None
 
 
 class Settings(BaseSettings):
@@ -41,7 +60,7 @@ class Settings(BaseSettings):
     api_secret_key: str = "change-me-to-a-random-string"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": _find_env_file(),
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "extra": "ignore",

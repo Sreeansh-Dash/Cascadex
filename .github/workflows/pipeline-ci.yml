@@ -1,0 +1,66 @@
+name: Pipeline CI
+on:
+  push:
+    branches: [main, develop]
+    paths: ['apps/pipeline/**']
+  pull_request:
+    paths: ['apps/pipeline/**']
+
+jobs:
+  lint:
+    name: Lint Pipeline Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-pipeline-${{ hashFiles('apps/pipeline/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          cd apps/pipeline
+          pip install -r requirements.txt
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff linter
+        run: ruff check apps/pipeline/ --config pyproject.toml
+
+  validate:
+    name: Validate Pipeline Sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-pipeline-${{ hashFiles('apps/pipeline/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          cd apps/pipeline
+          pip install -r requirements.txt
+
+      - name: Validate source parsers import cleanly
+        run: |
+          cd apps/pipeline
+          python -c "from sources.drugbank import parse_drugs; print('✅ drugbank parser OK')"
+          python -c "from sources.kegg import KEGGSource; print('✅ kegg parser OK')"
+          python -c "from sources.fda import FDASource; print('✅ fda parser OK')"
+          python -c "from loaders.validators import validate_drug_data; print('✅ validators OK')"

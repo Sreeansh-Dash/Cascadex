@@ -1,10 +1,17 @@
+# Cascadex API — Railway Configuration (legacy, kept for reference)
+# Primary deployment target is now Render (see render.yaml in project root).
+# If migrating back to Railway, this config is ready.
+
 [build]
 builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
 
-[[services]]
-name = "cascadex-api"
+[service]
+rootDirectory = "packages/api"

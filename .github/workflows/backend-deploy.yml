@@ -1,17 +1,37 @@
-name: Deploy Backend
+name: Deploy Backend to Render
 on:
   push:
     branches: [main]
     paths: ['packages/api/**']
 
+  # Allow manual trigger
+  workflow_dispatch:
+
 jobs:
+  # Gate: only deploy if CI passes
+  ci:
+    name: Run CI First
+    uses: ./.github/workflows/backend-ci.yml
+    secrets: inherit
+
   deploy:
+    name: Deploy to Render
+    needs: ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      - name: Deploy
-        run: railway up --service cascadex-api
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Trigger Render Deploy
+        run: |
+          echo "Triggering Render deploy hook..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+            echo "✅ Deploy triggered successfully (HTTP $RESPONSE)"
+          else
+            echo "❌ Deploy hook returned HTTP $RESPONSE"
+            exit 1
+          fi
+
+      - name: Deployment notice
+        run: |
+          echo "🚀 Cascadex API deployment triggered on Render."
+          echo "   Monitor: https://dashboard.render.com"
+          echo "   Health: Check /health endpoint after deploy completes."

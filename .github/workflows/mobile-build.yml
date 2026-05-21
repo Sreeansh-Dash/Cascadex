@@ -1,26 +1,58 @@
-name: Expo EAS Build
+name: Mobile CI & Build
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
+    paths: ['apps/mobile/**']
+  pull_request:
     paths: ['apps/mobile/**']
 
 jobs:
-  build:
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+  eas-build:
+    name: EAS Build (Preview)
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    # Only build on push to main, not on PRs or develop
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+
       - name: Install dependencies
-        run: |
-          cd apps/mobile
-          npm install
+        run: npm ci
+
       - name: Build preview
-        run: |
-          cd apps/mobile
-          eas build --profile preview --platform all --non-interactive
+        run: eas build --profile preview --platform all --non-interactive
