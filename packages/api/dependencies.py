@@ -4,7 +4,6 @@ Cascadex API — Shared FastAPI dependencies.
 Dependency injection for Neo4j sessions, settings, and shared services.
 """
 
-from fastapi import Depends
 from .config import Settings, get_settings
 from .services.neo4j_service import neo4j_service
 

@@ -6,8 +6,9 @@ Uses the real Neo4j database to get graph data, but mocks Groq to
 avoid hitting the LLM API during tests. Also tests caching logic.
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
 
 from packages.api.services.cache_service import cache_service
 
@@ -52,14 +53,14 @@ async def test_explain_chain_success(client, mock_groq_explain_chain):
     patients = resp.json()
     if not patients:
         pytest.skip("No patients found in test database")
-    
+
     patient_id = patients[0]["id"]
     graph_resp = await client.get(f"/api/admin/patient/{patient_id}/interactions")
     interactions = graph_resp.json().get("interactions", [])
-    
+
     if not interactions:
         pytest.skip("No interactions found in test database")
-        
+
     interaction = interactions[0]
     chain_id = f"{interaction['perpetrator_id']}:{interaction['victim_id']}:{interaction['via_enzyme']}"
 
@@ -79,16 +80,16 @@ async def test_explain_chain_cache_hit(client, mock_groq_explain_chain):
     # Use a dummy but correctly formatted chain ID. The endpoint validates format,
     # then calls Neo4j. We need a real chain ID or mock Neo4j. Let's mock neo4j for this.
     chain_id = "DB001:DB002:CYP3A4"
-    
+
     with patch("packages.api.routers.explain.neo4j_service.get_chain_detail", new_callable=AsyncMock) as mock_neo4j:
         mock_neo4j.return_value = {"dummy": "data"}
-        
+
         # Call 1: Misses cache, calls Neo4j & Groq
         resp1 = await client.get(f"/api/explain/chain/{chain_id}")
         assert resp1.status_code == 200
         assert mock_neo4j.call_count == 1
         assert mock_groq_explain_chain.call_count == 1
-        
+
         # Call 2: Hits cache, no Neo4j or Groq calls
         resp2 = await client.get(f"/api/explain/chain/{chain_id}")
         assert resp2.status_code == 200
@@ -123,13 +124,13 @@ async def test_explain_drug_success(client, mock_groq_explain_drug):
     """Should return a mocked drug explanation."""
     with patch("packages.api.routers.explain.neo4j_service.get_drug_by_id", new_callable=AsyncMock) as mock_neo4j:
         mock_neo4j.return_value = {"name": "Aspirin", "drugbank_id": "DB00945"}
-        
+
         resp = await client.get("/api/explain/drug/DB00945")
         assert resp.status_code == 200
         data = resp.json()
         assert data["drugbank_id"] == "DB00945"
         assert data["explanation"] == "This is a mocked Groq drug explanation."
-        
+
         mock_groq_explain_drug.assert_called_once()
 
 
@@ -142,7 +143,7 @@ async def test_explain_chain_groq_failure_returns_fallback(client, mock_groq_cli
     chain_id = "DB001:DB002:CYP3A4"
     with patch("packages.api.routers.explain.neo4j_service.get_chain_detail", new_callable=AsyncMock) as mock_neo4j:
         mock_neo4j.return_value = {"dummy": "data"}
-        
+
         resp = await client.get(f"/api/explain/chain/{chain_id}")
         assert resp.status_code == 200
         assert "fallback" in resp.json()["explanation"].lower() or "unable" in resp.json()["explanation"].lower()

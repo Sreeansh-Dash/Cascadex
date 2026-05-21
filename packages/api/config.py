@@ -9,9 +9,9 @@ the project root. This works in all contexts: local dev, Docker, CI, and Render.
 """
 
 import pathlib
+from functools import lru_cache
 
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 def _find_env_file() -> str | None:

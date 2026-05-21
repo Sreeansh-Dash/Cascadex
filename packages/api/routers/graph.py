@@ -6,8 +6,8 @@ Endpoints for full graph visualization data.
 
 from fastapi import APIRouter, HTTPException
 
-from ..services.neo4j_service import neo4j_service
 from ..models.graph import PatientGraph
+from ..services.neo4j_service import neo4j_service
 
 router = APIRouter()
 

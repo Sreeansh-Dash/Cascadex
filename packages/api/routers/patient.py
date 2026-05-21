@@ -4,12 +4,13 @@ Cascadex API — Patient Router.
 Endpoints for patient profile management and medication CRUD.
 """
 
-from fastapi import APIRouter, HTTPException
 import uuid
 
-from ..services.neo4j_service import neo4j_service
+from fastapi import APIRouter, HTTPException
+
+from ..models.patient import MedicationAdd, PatientCreate
 from ..services.cache_service import cache_service
-from ..models.patient import PatientCreate, MedicationAdd
+from ..services.neo4j_service import neo4j_service
 
 router = APIRouter()
 

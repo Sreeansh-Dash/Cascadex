@@ -10,7 +10,6 @@ results into human language — it never deduces interactions from training data
 
 import json
 import logging
-import os
 from typing import AsyncGenerator
 
 from groq import AsyncGroq

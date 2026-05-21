@@ -2,8 +2,9 @@
 Cascadex API — Patient Pydantic Models.
 """
 
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class PatientCreate(BaseModel):

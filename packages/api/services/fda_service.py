@@ -6,9 +6,9 @@ API docs: https://open.fda.gov/apis/drug/ndc/
 No API key required, but rate-limited to 240 requests/minute.
 """
 
-import httpx
 from typing import Optional
 
+import httpx
 
 FDA_BASE = "https://api.fda.gov"
 

@@ -6,8 +6,8 @@ Endpoints for drug lookup, search, and barcode scanning.
 
 from fastapi import APIRouter, HTTPException
 
+from ..services.fda_service import lookup_drug_by_ndc
 from ..services.neo4j_service import neo4j_service
-from ..services.fda_service import lookup_drug_by_ndc, search_drug_by_name
 
 router = APIRouter()
 

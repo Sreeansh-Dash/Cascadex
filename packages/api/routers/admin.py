@@ -10,12 +10,12 @@ Connects to: Neo4j AuraDB (via neo4j_service)
 
 from fastapi import APIRouter, HTTPException
 
-from ..services.neo4j_service import neo4j_service
 from ..models.admin import (
+    AdminStats,
     PrescribeCheckRequest,
     PrescribeCheckResponse,
-    AdminStats,
 )
+from ..services.neo4j_service import neo4j_service
 
 router = APIRouter()
 

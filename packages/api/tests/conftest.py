@@ -8,10 +8,10 @@ any test runs.
 
 import sys
 from pathlib import Path
-import pytest
+
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 from dotenv import load_dotenv
+from httpx import ASGITransport, AsyncClient
 
 # ---------------------------------------------------------------------------
 # 1. Load .env from the project root (three levels up from this file)
@@ -31,10 +31,10 @@ if _root_str not in sys.path:
 # ---------------------------------------------------------------------------
 # 3. Import the FastAPI application and services
 # ---------------------------------------------------------------------------
-from packages.api.main import app  # noqa: E402
 from packages.api.config import get_settings  # noqa: E402
-from packages.api.services.neo4j_service import neo4j_service  # noqa: E402
+from packages.api.main import app  # noqa: E402
 from packages.api.services.groq_service import init_groq  # noqa: E402
+from packages.api.services.neo4j_service import neo4j_service  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

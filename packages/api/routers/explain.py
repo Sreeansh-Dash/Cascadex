@@ -14,9 +14,9 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from ..services.neo4j_service import neo4j_service
 from ..services import groq_service
 from ..services.cache_service import cache_service
+from ..services.neo4j_service import neo4j_service
 
 logger = logging.getLogger(__name__)
 

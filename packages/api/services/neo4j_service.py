@@ -6,8 +6,9 @@ All Cypher traversal queries live here. This is the reasoning engine of Cascadex
 Connects to: Neo4j AuraDB (URI from NEO4J_URI env var)
 """
 
-from neo4j import AsyncGraphDatabase
 from typing import Optional
+
+from neo4j import AsyncGraphDatabase
 
 
 class Neo4jService:

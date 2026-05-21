@@ -5,14 +5,15 @@ Main entry point for the Cascadex backend. Configures the FastAPI app
 with CORS, lifespan management for Neo4j connections, and all route handlers.
 """
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from .config import get_settings
-from .services.neo4j_service import neo4j_service
+from .routers import admin, drugs, explain, graph, interactions, patient
 from .services.groq_service import init_groq
-from .routers import drugs, patient, interactions, graph, explain, admin
+from .services.neo4j_service import neo4j_service
 
 
 @asynccontextmanager

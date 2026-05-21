@@ -6,9 +6,9 @@ API docs: https://lhncbc.nlm.nih.gov/RxNav/APIs/RxNormAPIs.html
 Free REST API, no key required.
 """
 
-import httpx
 from typing import Optional
 
+import httpx
 
 RXNORM_BASE = "https://rxnav.nlm.nih.gov/REST"
 

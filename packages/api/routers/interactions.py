@@ -7,7 +7,6 @@ Endpoints for drug interaction detection, chain details, and simulation.
 from fastapi import APIRouter, HTTPException
 
 from ..services.neo4j_service import neo4j_service
-from ..services.cache_service import cache_service
 
 router = APIRouter()
 
