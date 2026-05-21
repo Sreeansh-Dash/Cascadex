@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { TOKENS } from '../../theme/tokens';
 
@@ -46,14 +46,37 @@ export const DangerBadge: React.FC<DangerBadgeProps> = ({
   count,
 }) => {
   const config = SEVERITY_CONFIG[severity];
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (severity === 'critical') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [severity]);
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.badge,
         {
           backgroundColor: config.bg,
           borderColor: config.border,
+          transform: [{ scale: pulseAnim }],
         },
         compact && styles.compact,
         severity === 'critical' && config.shadow,
@@ -72,7 +95,7 @@ export const DangerBadge: React.FC<DangerBadgeProps> = ({
       {count !== undefined && (
         <Text style={[styles.count, { color: config.text }]}>{count}</Text>
       )}
-    </View>
+    </Animated.View>
   );
 };
 

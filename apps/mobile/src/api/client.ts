@@ -6,9 +6,7 @@
 import axios, { AxiosError } from 'axios';
 
 // TODO: Update with actual Render URL after deployment
-const BASE_URL = __DEV__
-  ? 'http://192.168.1.100:8000'  // Update with your local IP
-  : 'https://cascadex-api.onrender.com';
+const BASE_URL = 'https://cascadex-api.onrender.com';
 
 export const api = axios.create({
   baseURL: `${BASE_URL}/api`,

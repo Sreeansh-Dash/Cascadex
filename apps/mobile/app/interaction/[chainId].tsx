@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Line, Rect, Text as SvgText, G } from 'react-native-svg';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { COLORS } from '../../src/theme/colors';
 import { TOKENS } from '../../src/theme/tokens';
 import { GlassCard } from '../../src/components/ui/GlassCard';
@@ -102,6 +104,39 @@ export default function ChainExplainerScreen() {
   const severity = (chain.overall_severity as string) === 'critical' ? 'critical'
     : (chain.overall_severity as string) === 'moderate' ? 'moderate'
     : 'safe';
+
+  const handleExport = async () => {
+    try {
+      const fileName = `Interaction_Report_${chain.perpetrator.name}_${chain.victim.name}.txt`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+      
+      const reportContent = `
+Cascadex Interaction Report
+---------------------------
+Perpetrator: ${chain.perpetrator.name} (${chain.perpetrator.class})
+Victim: ${chain.victim.name} (${chain.victim.class})
+Severity: ${chain.overall_severity.toUpperCase()}
+
+Pathway:
+${chainNodes.map((n) => n.label).join(' -> ')}
+
+AI Explanation:
+${explanationText}
+      `.trim();
+
+      await FileSystem.writeAsStringAsync(fileUri, reportContent);
+      
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/plain',
+          dialogTitle: 'Share Interaction Report',
+        });
+      }
+    } catch (err) {
+      console.error('Error sharing report:', err);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -298,10 +333,7 @@ export default function ChainExplainerScreen() {
             <View style={styles.ctaContainer}>
               <GlowButton
                 title="EXPORT TO PHARMACIST"
-                onPress={() => {
-                  // In production: generate PDF + share
-                  router.back();
-                }}
+                onPress={handleExport}
                 variant="teal"
                 size="lg"
               />

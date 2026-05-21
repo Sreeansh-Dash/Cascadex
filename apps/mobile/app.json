@@ -43,7 +43,8 @@
           "cameraPermission": "Allow Cascadex to scan medication barcodes"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sharing"
     ]
   }
 }

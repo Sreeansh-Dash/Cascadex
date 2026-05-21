@@ -45,6 +45,7 @@ apps/pipeline/data/*.xml
 apps/pipeline/data/*.csv
 apps/pipeline/data/*.json
 !apps/pipeline/data/.gitkeep
+!apps/pipeline/data/seed_drugs.json
 
 # --- IDE ---
 .vscode/

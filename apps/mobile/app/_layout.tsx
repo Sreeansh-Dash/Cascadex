@@ -13,6 +13,7 @@ import { IBMPlexSans_300Light, IBMPlexSans_400Regular, IBMPlexSans_500Medium, IB
 import { SpaceMono_400Regular, SpaceMono_700Bold } from '@expo-google-fonts/space-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { COLORS } from '../src/theme/colors';
+import { registerForPushNotificationsAsync, registerBackgroundFetchAsync } from '../src/services/notifications';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -45,6 +46,11 @@ export default function RootLayout() {
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+    registerBackgroundFetchAsync();
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

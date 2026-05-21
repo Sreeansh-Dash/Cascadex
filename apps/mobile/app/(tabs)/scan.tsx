@@ -3,7 +3,7 @@
  * Full-screen camera with animated targeting overlay.
  * Falls back to manual drug name entry.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,13 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useCameraPermissions, CameraView, BarcodeScanningResult } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS } from '../../src/theme/colors';
 import { TOKENS } from '../../src/theme/tokens';
+import { scheduleCriticalAlertNotification } from '../../src/services/notifications';
 import { ScanOverlay } from '../../src/components/ui/ScanOverlay';
 import { GlassCard } from '../../src/components/ui/GlassCard';
 import { GlowButton } from '../../src/components/ui/GlowButton';
@@ -47,7 +50,24 @@ export default function ScanScreen() {
   const [isLocked, setIsLocked] = useState(false);
   const slideAnim = useState(new Animated.Value(300))[0];
 
+  const [permission, requestPermission] = useCameraPermissions();
+
+  useEffect(() => {
+    if (!permission?.granted && permission?.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission]);
+
+  // Trigger Haptic & Notification on interaction detection
+  useEffect(() => {
+    if (!isSimulating && simulation && simulation.new_interactions_count > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      scheduleCriticalAlertNotification(scannedDrug?.name || 'New medication', simulation.new_interactions_count);
+    }
+  }, [isSimulating, simulation]);
+
   const handleDrugFound = useCallback(async (drug: ScannedDrug) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setScannedDrug(drug);
     setIsLocked(true);
 
@@ -62,6 +82,34 @@ export default function ScanScreen() {
       friction: 10,
     }).start();
   }, [patientId]);
+
+  const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
+    if (isLocked || scannedDrug || isSearching) return;
+    
+    // Trigger lightweight haptic for scanning
+    Haptics.selectionAsync();
+    const ndcCode = result.data;
+    
+    setIsSearching(true);
+    try {
+      // In a real app this would ping an NDC-to-DrugBank mapping endpoint.
+      // We will fall back to using lookupDrug with the raw barcode to mimic the flow.
+      const results = await drugsApi.lookupDrug(ndcCode);
+      if (results && results.length > 0) {
+        const drug = results[0];
+        handleDrugFound({
+          drugbank_id: drug.drugbank_id,
+          name: drug.name,
+          class: drug.class,
+          description: drug.description,
+        });
+      }
+    } catch (err) {
+      console.log("Error searching barcode:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -108,8 +156,23 @@ export default function ScanScreen() {
     <SafeAreaView style={styles.container}>
       {mode === 'scan' ? (
         <View style={styles.scanArea}>
-          {/* Simulated camera background */}
           <View style={styles.cameraPlaceholder}>
+            {permission?.granted ? (
+              <CameraView 
+                style={StyleSheet.absoluteFillObject} 
+                facing="back"
+                barcodeScannerSettings={{
+                  barcodeTypes: ["upc_a", "upc_e", "ean13", "ean8", "qr", "code128"],
+                }}
+                onBarcodeScanned={handleBarcodeScanned}
+              />
+            ) : (
+              <View style={styles.noCameraView}>
+                <Text style={styles.noCameraText}>Camera access required.</Text>
+                <GlowButton title="Grant Permission" onPress={requestPermission} variant="teal" size="sm" />
+              </View>
+            )}
+            
             <View style={styles.gridOverlay}>
               {Array.from({ length: 20 }).map((_, i) => (
                 <View
@@ -256,6 +319,19 @@ const styles = StyleSheet.create({
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+  noCameraView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#050810',
+    padding: 20,
+    gap: 16,
+  },
+  noCameraText: {
+    fontFamily: 'Syne_700Bold',
+    fontSize: 16,
+    color: COLORS.text.secondary,
   },
   gridLine: {
     position: 'absolute',

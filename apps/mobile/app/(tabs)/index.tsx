@@ -22,6 +22,9 @@ import Svg, {
   G,
   Text as SvgText,
 } from 'react-native-svg';
+import * as Haptics from 'expo-haptics';
+
+const AnimatedG = Animated.createAnimatedComponent(G);
 import { useRouter } from 'expo-router';
 import { COLORS } from '../../src/theme/colors';
 import { TOKENS } from '../../src/theme/tokens';
@@ -146,6 +149,7 @@ export default function HomeScreen() {
     usePatientStore();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const fadeAnims = useRef<Map<string, Animated.Value>>(new Map()).current;
+  const edgePulseAnim = useRef(new Animated.Value(0.3)).current;
 
   // Use demo data if no API data
   const graphData =
@@ -156,8 +160,24 @@ export default function HomeScreen() {
     [graphData],
   );
 
-  // Initialize fade animations
+  // Initialize fade animations and edge pulse
   useEffect(() => {
+    // Edge pulse loop
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(edgePulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(edgePulseAnim, {
+          toValue: 0.3,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     graphData.nodes.forEach((node, _i) => {
       if (!fadeAnims.has(node.id)) {
         fadeAnims.set(node.id, new Animated.Value(0));
@@ -265,20 +285,31 @@ export default function HomeScreen() {
             const from = positions.get(edge.source);
             const to = positions.get(edge.target);
             if (!from || !to) return null;
-            return (
+            
+            const isCritical = edge.strength === 'strong' || edge.type === 'INHIBITS';
+            
+            const edgeLine = (
               <Line
-                key={`edge-${i}`}
+                key={`edge-line-${i}`}
                 x1={from.x}
                 y1={from.y}
                 x2={to.x}
                 y2={to.y}
                 stroke={getEdgeColor(edge)}
-                strokeWidth={edge.strength === 'strong' ? 2.5 : 1.5}
-                strokeOpacity={getEdgeOpacity(edge)}
+                strokeWidth={isCritical ? 3 : 1.5}
+                strokeOpacity={isCritical ? 1 : getEdgeOpacity(edge)}
                 strokeDasharray={
                   edge.type === 'SUBSTRATE_OF' ? '6,4' : undefined
                 }
               />
+            );
+
+            return isCritical ? (
+              <AnimatedG key={`edge-${i}`} opacity={edgePulseAnim}>
+                {edgeLine}
+              </AnimatedG>
+            ) : (
+              <G key={`edge-${i}`}>{edgeLine}</G>
             );
           })}
 
@@ -287,15 +318,18 @@ export default function HomeScreen() {
             const pos = positions.get(node.id);
             if (!pos) return null;
             const r = NODE_RADIUS[node.type] || 20;
+            const fadeAnim = fadeAnims.get(node.id) || new Animated.Value(1);
             return (
-              <Circle
-                key={`glow-${node.id}`}
-                cx={pos.x}
-                cy={pos.y}
-                r={r * 1.8}
-                fill={`url(#grad-${node.id})`}
-                opacity={selectedNode === node.id ? 0.7 : 0.25}
-              />
+              <AnimatedG key={`glow-group-${node.id}`} opacity={fadeAnim}>
+                <Circle
+                  key={`glow-${node.id}`}
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={r * 1.8}
+                  fill={`url(#grad-${node.id})`}
+                  opacity={selectedNode === node.id ? 0.7 : 0.25}
+                />
+              </AnimatedG>
             );
           })}
 
@@ -304,10 +338,15 @@ export default function HomeScreen() {
             const pos = positions.get(node.id);
             if (!pos) return null;
             const r = NODE_RADIUS[node.type] || 20;
+            const fadeAnim = fadeAnims.get(node.id) || new Animated.Value(1);
             return (
-              <G
+              <AnimatedG
                 key={`node-${node.id}`}
-                onPress={() => setSelectedNode(node.id)}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSelectedNode(node.id);
+                }}
+                opacity={fadeAnim}
               >
                 <Circle
                   cx={pos.x}
