@@ -60,7 +60,5 @@ jobs:
       - name: Validate source parsers import cleanly
         run: |
           cd apps/pipeline
-          python -c "from sources.drugbank import parse_drugs; print('✅ drugbank parser OK')"
-          python -c "from sources.kegg import KEGGSource; print('✅ kegg parser OK')"
-          python -c "from sources.fda import FDASource; print('✅ fda parser OK')"
-          python -c "from loaders.validators import validate_drug_data; print('✅ validators OK')"
+          python -c "from loaders.ai_extractor import LlamaExtractor; print('✅ ai_extractor OK')"
+          python -c "from loaders.neo4j_writer import Neo4jWriter; print('✅ neo4j_writer OK')"

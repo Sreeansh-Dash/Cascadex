@@ -371,7 +371,7 @@ export default function HomeScreen() {
                     ? node.label.slice(0, 9) + '…'
                     : node.label}
                 </SvgText>
-              </G>
+              </AnimatedG>
             );
           })}
         </Svg>
