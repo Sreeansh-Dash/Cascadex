@@ -108,6 +108,7 @@ export default function ChainExplainerScreen() {
   const handleExport = async () => {
     try {
       const fileName = `Interaction_Report_${chain.perpetrator.name}_${chain.victim.name}.txt`;
+      // @ts-ignore: expo-file-system types mismatch in CI
       const fileUri = FileSystem.documentDirectory + fileName;
       
       const reportContent = `
