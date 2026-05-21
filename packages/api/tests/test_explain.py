@@ -145,4 +145,4 @@ async def test_explain_chain_groq_failure_returns_fallback(client, mock_groq_cli
         
         resp = await client.get(f"/api/explain/chain/{chain_id}")
         assert resp.status_code == 200
-        assert "fallback" in resp.json()["explanation"].lower() or "unavailable" in resp.json()["explanation"].lower()
+        assert "fallback" in resp.json()["explanation"].lower() or "unable" in resp.json()["explanation"].lower()
