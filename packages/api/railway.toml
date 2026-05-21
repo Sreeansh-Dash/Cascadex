@@ -4,14 +4,11 @@
 
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt"
+buildCommand = "pip install -r packages/api/requirements.txt"
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+startCommand = "uvicorn packages.api.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-[service]
-rootDirectory = "packages/api"

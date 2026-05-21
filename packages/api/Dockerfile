@@ -2,7 +2,8 @@
 # Cascadex API — Docker Image
 # ===========================
 # Multi-stage build for the FastAPI backend.
-# Compatible with docker-compose (local dev) and Render/Railway deploys.
+# Designed to be built from the REPOSITORY ROOT:
+# docker build -t cascadex-api -f packages/api/Dockerfile .
 
 # ---- Stage 1: Builder ----
 FROM python:3.12-slim AS builder
@@ -13,7 +14,7 @@ WORKDIR /build
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt .
+COPY packages/api/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -32,8 +33,9 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app"
 
-# Copy application code
+# Copy application code from root
 COPY . .
 
 # Health check
@@ -45,4 +47,4 @@ USER cascadex
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "packages.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

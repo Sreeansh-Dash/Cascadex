@@ -7,11 +7,12 @@ services:
     runtime: python
     region: oregon
     plan: free
-    rootDir: packages/api
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r packages/api/requirements.txt
+    startCommand: uvicorn packages.api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: PYTHONPATH
+        value: "/opt/render/project/src"
       # --- Neo4j AuraDB ---
       - key: NEO4J_URI
         sync: false
