@@ -1,5 +1,7 @@
+import 'react-native-gesture-handler';
 import React, { useCallback, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -69,9 +71,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <View style={styles.container} onLayout={onLayoutRootView}>
+        <GestureHandlerRootView style={styles.container} onLayout={onLayoutRootView}>
           <AppContent />
-        </View>
+        </GestureHandlerRootView>
       </ThemeProvider>
     </QueryClientProvider>
   );
