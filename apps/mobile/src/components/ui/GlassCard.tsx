@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ViewStyle,
 } from 'react-native';
-import { COLORS } from '../../theme/colors';
-import { TOKENS } from '../../theme/tokens';
+import { COLORS } from '@/theme/colors';
+import { TOKENS } from '@/theme/tokens';
 
 interface GlassCardProps {
   children: React.ReactNode;

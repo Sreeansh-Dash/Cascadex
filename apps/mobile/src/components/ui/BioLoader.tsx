@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { COLORS } from '../../theme/colors';
+import { COLORS } from '@/theme/colors';
 
 interface BioLoaderProps {
   size?: number;

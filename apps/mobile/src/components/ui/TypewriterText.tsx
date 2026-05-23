@@ -1,80 +1,24 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Text, TextStyle, Animated } from 'react-native';
-import { COLORS } from '../../theme/colors';
-import { TYPE_SCALE } from '../../theme/typography';
+import React, { useEffect, useState } from 'react';
+import { Text, StyleSheet } from 'react-native';
+import { useTheme } from '@/theme/ThemeContext';
 
-interface TypewriterTextProps {
-  text: string;
-  speed?: number;
-  onComplete?: () => void;
-  style?: TextStyle;
-}
-
-export const TypewriterText: React.FC<TypewriterTextProps> = ({
-  text,
-  speed = 30,
-  onComplete,
-  style,
-}) => {
-  const [displayed, setDisplayed] = useState('');
-  const cursorOpacity = useRef(new Animated.Value(1)).current;
-  const indexRef = useRef(0);
+export const TypewriterText = ({ text, delay = 50 }: { text: string, delay?: number }) => {
+  const { theme } = useTheme();
+  const [displayedText, setDisplayedText] = useState('');
 
   useEffect(() => {
-    setDisplayed('');
-    indexRef.current = 0;
-
+    let i = 0;
     const interval = setInterval(() => {
-      indexRef.current += 1;
-      if (indexRef.current <= text.length) {
-        setDisplayed(text.slice(0, indexRef.current));
-      } else {
-        clearInterval(interval);
-        onComplete?.();
-      }
-    }, speed);
-
+      setDisplayedText(text.slice(0, i));
+      i++;
+      if (i > text.length) clearInterval(interval);
+    }, delay);
     return () => clearInterval(interval);
-  }, [text, speed]);
+  }, [text, delay]);
 
-  useEffect(() => {
-    const blink = Animated.loop(
-      Animated.sequence([
-        Animated.timing(cursorOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cursorOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    blink.start();
-    return () => blink.stop();
-  }, []);
-
-  const isComplete = displayed.length >= text.length;
-
-  return (
-    <Text style={[defaultStyle, style]}>
-      {displayed}
-      {!isComplete && (
-        <Animated.Text
-          style={[
-            { color: COLORS.primary, opacity: cursorOpacity },
-          ]}
-        >
-          ▌
-        </Animated.Text>
-      )}
-    </Text>
-  );
+  return <Text style={[styles.text, { color: theme.colors.textPrimary, fontFamily: theme.typography.mono }]}>{displayedText}</Text>;
 };
 
-const defaultStyle: TextStyle = {
-  ...TYPE_SCALE.body,
-  color: COLORS.text.primary,
-};
+const styles = StyleSheet.create({
+  text: { fontSize: 14, lineHeight: 20 },
+});

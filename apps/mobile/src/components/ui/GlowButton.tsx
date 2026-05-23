@@ -1,147 +1,160 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Animated,
-  ViewStyle,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../../theme/colors';
-import { TOKENS } from '../../theme/tokens';
-import { TYPE_SCALE } from '../../theme/typography';
+import React, { ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@/theme/ThemeContext';
+import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 interface GlowButtonProps {
-  title: string;
+  label: string;
   onPress: () => void;
-  variant?: 'teal' | 'magenta' | 'amber';
-  size?: 'sm' | 'md' | 'lg';
-  disabled?: boolean;
+  variant: 'primary' | 'secondary' | 'destructive' | 'ghost';
+  size: 'sm' | 'md' | 'lg';
   loading?: boolean;
-  style?: ViewStyle;
+  disabled?: boolean;
+  icon?: ReactNode;
+  fullWidth?: boolean;
 }
 
-const VARIANT_CONFIG = {
-  teal: {
-    gradient: ['#004D36', '#00FFB2'] as [string, string],
-    shadow: TOKENS.shadow.glowTeal,
-    textColor: COLORS.text.inverse,
-  },
-  magenta: {
-    gradient: ['#4D001F', '#FF0066'] as [string, string],
-    shadow: TOKENS.shadow.glowMagenta,
-    textColor: '#FFF',
-  },
-  amber: {
-    gradient: ['#4D3700', '#FFB800'] as [string, string],
-    shadow: TOKENS.shadow.glowAmber,
-    textColor: COLORS.text.inverse,
-  },
-};
-
-const SIZE_CONFIG = {
-  sm: { paddingVertical: 8, paddingHorizontal: 16, fontSize: 13 },
-  md: { paddingVertical: 14, paddingHorizontal: 28, fontSize: 15 },
-  lg: { paddingVertical: 18, paddingHorizontal: 36, fontSize: 17 },
-};
-
 export const GlowButton: React.FC<GlowButtonProps> = ({
-  title,
+  label,
   onPress,
-  variant = 'teal',
-  size = 'md',
-  disabled = false,
+  variant,
+  size,
   loading = false,
-  style,
+  disabled = false,
+  icon,
+  fullWidth = false,
 }) => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const config = VARIANT_CONFIG[variant];
-  const sizeConfig = SIZE_CONFIG[size];
+  const { theme, mode } = useTheme();
+  const scale = useSharedValue(1);
 
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.15,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    if (!disabled) pulse.start();
-    return () => pulse.stop();
-  }, [disabled]);
+  const handlePressIn = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(0.96);
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(1);
+    }
+  };
+
+  const handlePress = () => {
+    if (disabled || loading) return;
+    
+    if (variant === 'destructive') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    onPress();
+  };
+
+  const getHeight = () => {
+    switch (size) {
+      case 'sm': return 40;
+      case 'md': return 52;
+      case 'lg': return 56;
+      default: return 56;
+    }
+  };
+
+  const getBackgroundColor = () => {
+    if (disabled) return mode === 'biopunk' ? '#1E2E42' : '#D8CFC8';
+    if (variant === 'primary') return theme.colors.btnPrimaryBg;
+    if (variant === 'destructive') return theme.colors.btnDestructive;
+    if (variant === 'secondary' || variant === 'ghost') return theme.colors.btnSecBg;
+    return theme.colors.btnPrimaryBg;
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return 'transparent';
+    if (variant === 'secondary') return theme.colors.btnSecBorder;
+    if (variant === 'destructive') return theme.colors.btnDestructive;
+    return 'transparent';
+  };
+
+  const getTextColor = () => {
+    if (disabled) return theme.colors.textMuted;
+    if (variant === 'primary') return theme.colors.btnPrimaryText;
+    if (variant === 'destructive') return '#FFFFFF';
+    if (variant === 'secondary' || variant === 'ghost') return theme.colors.btnSecText;
+    return theme.colors.btnPrimaryText;
+  };
+
+  const getGlowStyle = () => {
+    if (disabled || variant === 'ghost' || variant === 'secondary') return {};
+    if (mode === 'biopunk') {
+      if (variant === 'primary') return theme.shadows.glowAccent;
+      if (variant === 'destructive') return theme.shadows.glowDanger;
+    } else {
+      if (variant === 'primary') return theme.shadows.glowAccent;
+      if (variant === 'destructive') return theme.shadows.glowDanger;
+    }
+    return {};
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
   return (
-    <Animated.View
-      style={[
-        styles.wrapper,
-        config.shadow,
-        { transform: [{ scale: disabled ? 1 : pulseAnim }] },
-        disabled && styles.disabled,
-        style,
-      ]}
-    >
+    <Animated.View style={[animatedStyle, fullWidth && { width: '100%' }]}>
       <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled || loading}
-        activeOpacity={0.8}
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+        style={[
+          styles.button,
+          {
+            height: getHeight(),
+            backgroundColor: getBackgroundColor(),
+            borderColor: getBorderColor(),
+            borderWidth: variant === 'secondary' ? 1.5 : 0,
+            opacity: disabled ? 0.6 : 1,
+          },
+          getGlowStyle(),
+        ]}
       >
-        <LinearGradient
-          colors={disabled ? ['#1A2332', '#2D4052'] : config.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.gradient,
-            {
-              paddingVertical: sizeConfig.paddingVertical,
-              paddingHorizontal: sizeConfig.paddingHorizontal,
-            },
-          ]}
-        >
+        <View style={styles.contentContainer}>
           {loading ? (
-            <ActivityIndicator color={config.textColor} size="small" />
+            <ActivityIndicator color={getTextColor()} />
           ) : (
-            <Text
-              style={[
-                styles.text,
-                {
-                  color: disabled ? COLORS.text.muted : config.textColor,
-                  fontSize: sizeConfig.fontSize,
-                },
-              ]}
-            >
-              {title}
-            </Text>
+            <>
+              {icon && <View style={styles.iconContainer}>{icon}</View>}
+              <Text style={[styles.label, { color: getTextColor(), fontFamily: theme.typography.subhead }]}>
+                {label}
+              </Text>
+            </>
           )}
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    borderRadius: TOKENS.radius.pill,
+  button: {
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 48,
     overflow: 'visible',
   },
-  gradient: {
-    borderRadius: TOKENS.radius.pill,
+  contentContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    fontFamily: 'Syne_700Bold',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  iconContainer: {
+    marginRight: 8,
   },
-  disabled: {
-    opacity: 0.5,
+  label: {
+    fontSize: 16,
   },
 });

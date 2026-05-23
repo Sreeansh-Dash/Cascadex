@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
-import { COLORS } from '../../theme/colors';
-import { TOKENS } from '../../theme/tokens';
+import { COLORS } from '@/theme/colors';
+import { TOKENS } from '@/theme/tokens';
 
 interface ScanOverlayProps {
   isLocked?: boolean;
