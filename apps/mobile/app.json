@@ -44,18 +44,7 @@
       ],
       "expo-font",
       "expo-sharing",
-      "expo-secure-store",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "newArchEnabled": false
-          },
-          "ios": {
-            "newArchEnabled": false
-          }
-        }
-      ]
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
