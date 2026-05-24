@@ -1,4 +1,3 @@
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 
-// @ts-ignore: MMKV is a class at runtime
-export const storage = new MMKV();
+export const storage = createMMKV();
