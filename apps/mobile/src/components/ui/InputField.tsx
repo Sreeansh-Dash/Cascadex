@@ -19,6 +19,7 @@ interface InputFieldProps {
   strengthMeter?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }
 
 export const InputField: React.FC<InputFieldProps> = ({
@@ -36,6 +37,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   strengthMeter = false,
   leftIcon,
   rightIcon,
+  autoCapitalize = 'sentences',
 }) => {
   const { theme, mode } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -111,6 +113,7 @@ export const InputField: React.FC<InputFieldProps> = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           selectionColor={theme.colors.accent}
+          autoCapitalize={autoCapitalize}
         />
         
         {secureTextEntry && !rightIcon && (

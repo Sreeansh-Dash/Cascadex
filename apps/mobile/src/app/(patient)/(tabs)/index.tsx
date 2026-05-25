@@ -1,49 +1,69 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { DangerBadge } from '@/components/ui/DangerBadge';
+import { useAuthStore } from '@/store/auth.store';
+import { usePatientStore } from '@/store/patient.store';
+import { DrugGraphCanvas } from '@/components/graph/DrugGraphCanvas';
+import { router } from 'expo-router';
 
 export default function PatientHomeGraph() {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuthStore();
+  const { medications, graph, alerts, setCurrentPatient } = usePatientStore();
+
+  useEffect(() => {
+    // If user is logged in, ensure we initialize their patient profile store
+    if (user && !usePatientStore.getState().currentPatientId) {
+      setCurrentPatient(user.id);
+    }
+  }, [user]);
+
+  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+  const moderateCount = alerts.filter(a => a.severity === 'moderate').length;
+  const safeCount = Math.max(0, medications.length - criticalCount - moderateCount);
 
   return (
-    <ScreenContainer scrollable={false} padding={false}>
+    <ScreenContainer scrollable={false} padding={false} hasTabBar={true}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>R</Text>
+            <Text style={styles.avatarText}>
+              {(user?.firstName || 'R')[0].toUpperCase()}
+            </Text>
           </View>
           <Text style={[styles.greeting, { color: theme.colors.textPrimary, fontFamily: theme.typography.bodyMed }]}>
-            Namaste, Ramesh
+            Namaste, {user?.firstName || 'Ramesh'}
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <Ionicons name="notifications-outline" size={24} color={theme.colors.textPrimary} style={styles.icon} />
+          <Ionicons 
+            name="notifications-outline" 
+            size={24} 
+            color={theme.colors.textPrimary} 
+            style={styles.icon} 
+            onPress={() => router.push('/(patient)/notifications')}
+          />
           <Ionicons name="moon-outline" size={24} color={theme.colors.textPrimary} style={styles.icon} onPress={toggleTheme} />
         </View>
       </View>
 
-      {/* Graph Area (Placeholder for Skia) */}
+      {/* Graph Area */}
       <View style={styles.graphContainer}>
-        <View style={[styles.graphPlaceholder, { borderColor: theme.colors.accent, backgroundColor: theme.colors.accentSurface }]}>
-          <Ionicons name="git-network-outline" size={64} color={theme.colors.accent} />
-          <Text style={[styles.graphPlaceholderText, { color: theme.colors.textPrimary, fontFamily: theme.typography.mono }]}>
-            Skia Canvas Placeholder
-          </Text>
-        </View>
+        <DrugGraphCanvas graphData={graph} />
       </View>
 
       {/* Bottom Sheet Peek */}
       <View style={[styles.bottomSheetPeek, { backgroundColor: theme.colors.bgElevated, borderColor: theme.colors.bgBorder }]}>
         <View style={[styles.dragHandle, { backgroundColor: theme.colors.bgBorder }]} />
         <View style={styles.chipsRow}>
-          <DangerBadge status="critical" label="2 Critical" />
-          <DangerBadge status="moderate" label="1 Moderate" />
-          <DangerBadge status="safe" label="4 Safe" />
+          <DangerBadge status="critical" label={`${criticalCount} Critical`} />
+          <DangerBadge status="moderate" label={`${moderateCount} Moderate`} />
+          <DangerBadge status="safe" label={`${safeCount} Safe`} />
         </View>
       </View>
 
@@ -51,7 +71,7 @@ export default function PatientHomeGraph() {
       <View style={styles.fabContainer}>
         <GlowButton
           label=""
-          onPress={() => {}}
+          onPress={() => router.push('/(patient)/add-medication')}
           variant="primary"
           size="lg"
           icon={<Ionicons name="add" size={24} color={theme.colors.btnPrimaryText} />}
@@ -99,23 +119,11 @@ const styles = StyleSheet.create({
   graphContainer: {
     flex: 1,
     padding: 20,
-    paddingBottom: 100, // leave space for bottom sheet
-  },
-  graphPlaceholder: {
-    flex: 1,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  graphPlaceholderText: {
-    marginTop: 16,
-    fontSize: 14,
+    paddingBottom: 230, // leave space for bottom sheet + FAB above tab bar
   },
   bottomSheetPeek: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 80, // Sit directly above absolute tab bar (which has height 80)
     left: 0,
     right: 0,
     height: 120,
@@ -124,6 +132,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
+    zIndex: 100,
   },
   dragHandle: {
     width: 32,
@@ -138,11 +147,12 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 140, // above bottom sheet
+    bottom: 210, // above bottom sheet (which sits at bottom 80 and is 120 tall: 80 + 120 = 200)
     right: 20,
     width: 60,
     height: 60,
     borderRadius: 30,
     overflow: 'hidden',
+    zIndex: 110,
   },
 });

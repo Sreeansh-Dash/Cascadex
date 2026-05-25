@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ViewStyle, Animated } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 
 interface DangerBadgeProps {
@@ -10,6 +10,28 @@ interface DangerBadgeProps {
 
 export const DangerBadge: React.FC<DangerBadgeProps> = ({ status, label, style }) => {
   const { theme } = useTheme();
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (status === 'critical') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    } else {
+      blinkAnim.setValue(1);
+    }
+  }, [status]);
 
   const getColors = () => {
     switch (status) {
@@ -51,11 +73,21 @@ export const DangerBadge: React.FC<DangerBadgeProps> = ({ status, label, style }
   };
 
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg, borderColor: colors.border }, style]}>
+    <Animated.View 
+      style={[
+        styles.badge, 
+        { 
+          backgroundColor: colors.bg, 
+          borderColor: colors.border,
+          opacity: blinkAnim 
+        }, 
+        style
+      ]}
+    >
       <Text style={[styles.text, { color: colors.text, fontFamily: theme.typography.subhead }]}>
         {label || defaultLabels[status]}
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -74,3 +106,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
+

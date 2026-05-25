@@ -1,34 +1,49 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { InputField } from '@/components/ui/InputField';
 import { useAuthStore } from '@/store/auth.store';
+import { usePatientStore } from '@/store/patient.store';
 import { router } from 'expo-router';
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from 'react-native';
 
 export default function SignInScreen() {
   const { theme } = useTheme();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState('');
+  
   const { signIn } = useAuthStore();
+  const { setCurrentPatient } = usePatientStore();
 
   const handleSignIn = () => {
+    setErrorMsg('');
+    if (!email || !password) {
+      setErrorMsg('Please enter both email and password');
+      return;
+    }
+    
     setLoading(true);
-    // Mock Sign in
     setTimeout(() => {
       setLoading(false);
-      signIn('mock-token', {
-        id: 'DEMO-PATIENT-001',
-        firstName: 'Ramesh',
-        role: 'patient',
-        verificationStatus: 'verified'
-      });
-      router.replace('/(patient)/(tabs)');
-    }, 1000);
+      const res = signIn(email, password);
+      if (res.success) {
+        const user = useAuthStore.getState().user;
+        if (user) {
+          if (user.role === 'patient') {
+            setCurrentPatient(user.id);
+            router.replace('/(patient)/(tabs)');
+          } else {
+            router.replace('/(clinician)/(tabs)/dashboard');
+          }
+        }
+      } else {
+        setErrorMsg(res.error || 'Invalid credentials');
+      }
+    }, 800);
   };
 
   return (
@@ -40,21 +55,29 @@ export default function SignInScreen() {
       </View>
 
       <View style={styles.form}>
+        {errorMsg ? (
+          <Text style={[styles.errorText, { color: theme.colors.dangerStrong, fontFamily: theme.typography.subhead }]}>
+            {errorMsg}
+          </Text>
+        ) : null}
+
         <InputField
           label="Email / Phone"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(txt) => { setErrorMsg(''); setEmail(txt); }}
           placeholder="Enter email or phone"
           leftIcon={<Ionicons name="mail" size={20} color={theme.colors.textMuted} />}
+          autoCapitalize="none"
         />
         
         <InputField
           label="Password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(txt) => { setErrorMsg(''); setPassword(txt); }}
           placeholder="Enter password"
           secureTextEntry
           leftIcon={<Ionicons name="lock-closed" size={20} color={theme.colors.textMuted} />}
+          autoCapitalize="none"
         />
         
         <View style={styles.forgotPassword}>
@@ -69,6 +92,17 @@ export default function SignInScreen() {
           fullWidth
           loading={loading}
         />
+
+        <View style={styles.signUpContainer}>
+          <Text style={[styles.signUpText, { color: theme.colors.textSecondary, fontFamily: theme.typography.body }]}>
+            Don't have an account?{' '}
+          </Text>
+          <Pressable onPress={() => router.push('/(auth)/sign-up/step-1-account')}>
+            <Text style={[styles.signUpLink, { color: theme.colors.accent, fontFamily: theme.typography.subhead }]}>
+              Sign Up
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </ScreenContainer>
   );
@@ -87,14 +121,33 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     marginTop: 8,
+    textAlign: 'center',
   },
   form: {
     width: '100%',
     gap: 16,
   },
+  errorText: {
+    textAlign: 'center',
+    fontSize: 14,
+    marginBottom: 8,
+  },
   forgotPassword: {
     alignItems: 'flex-end',
     height: 44,
     justifyContent: 'center',
+  },
+  signUpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+    paddingBottom: 40,
+  },
+  signUpText: {
+    fontSize: 14,
+  },
+  signUpLink: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

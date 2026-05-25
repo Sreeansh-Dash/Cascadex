@@ -10,6 +10,7 @@ interface ScreenContainerProps {
   scrollable?: boolean;
   padding?: boolean;
   keyboardAvoiding?: boolean;
+  hasTabBar?: boolean;
 }
 
 export const ScreenContainer: React.FC<ScreenContainerProps> = ({
@@ -18,9 +19,12 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   scrollable = false,
   padding = true,
   keyboardAvoiding = true,
+  hasTabBar = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+
+  const tabPadding = hasTabBar ? 90 : 0;
 
   const contentStyle = [
     styles.content,
@@ -30,13 +34,13 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
   const content = scrollable ? (
     <ScrollView
-      contentContainerStyle={[contentStyle, { paddingBottom: insets.bottom + (padding ? 16 : 0) }]}
+      contentContainerStyle={[contentStyle, { paddingBottom: insets.bottom + (padding ? 16 : 0) + tabPadding }]}
       keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[contentStyle, { paddingBottom: insets.bottom }]}>
+    <View style={[contentStyle, { paddingBottom: insets.bottom + tabPadding }]}>
       {children}
     </View>
   );
