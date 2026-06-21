@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { storage } from './storage';
-import axios from 'axios';
-import { Platform } from 'react-native';
+import { api as apiClient } from '../api/client';
 
 const zustandStorage: StateStorage = {
   setItem: (name, value) => storage.set(name, value),
@@ -10,15 +9,7 @@ const zustandStorage: StateStorage = {
   removeItem: (name) => storage.remove(name),
 };
 
-// Use 10.0.2.2 for Android emulator, localhost for iOS simulator
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000/api' : 'http://localhost:8000/api';
-
-export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+export { apiClient };
 
 export interface User {
   id: string;
