@@ -33,11 +33,11 @@ export default function PatientHomeGraph() {
         <View style={styles.headerLeft}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {(user?.firstName || 'R')[0].toUpperCase()}
+              {(user?.first_name || 'R')[0].toUpperCase()}
             </Text>
           </View>
           <Text style={[styles.greeting, { color: theme.colors.textPrimary, fontFamily: theme.typography.bodyMed }]}>
-            Namaste, {user?.firstName || 'Ramesh'}
+            Namaste, {user?.first_name || 'Ramesh'}
           </Text>
         </View>
         <View style={styles.headerRight}>

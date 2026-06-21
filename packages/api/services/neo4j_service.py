@@ -486,6 +486,77 @@ class Neo4jService:
             result = await session.run(query)
             return [record.data() async for record in result]
 
+    # ----------------------------------------------------------------
+    # AUTHENTICATION & CREDENTIALS
+    # ----------------------------------------------------------------
+    async def get_patient_by_email(self, email: str) -> Optional[dict]:
+        """Get a patient node by email address."""
+        query = """
+        MATCH (p:Patient {email: $email})
+        RETURN p {.*} AS patient
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query, email=email)
+            record = await result.single()
+            return record.data()["patient"] if record else None
+
+    async def create_patient_user(
+        self, id: str, email: str, hashed_password: str, 
+        first_name: str, last_name: str = "", age_range: str = "", weight_range: str = ""
+    ) -> dict:
+        """Create a new patient with authentication credentials."""
+        query = """
+        MERGE (p:Patient {email: $email})
+        ON CREATE SET p.id = $id,
+                      p.hashed_password = $hashedPassword,
+                      p.first_name = $firstName,
+                      p.last_name = $lastName,
+                      p.age_range = $ageRange,
+                      p.weight_range = $weightRange,
+                      p.created_at = datetime()
+        RETURN p {.*} AS patient
+        """
+        async with self.driver.session() as session:
+            result = await session.run(
+                query,
+                email=email,
+                id=id,
+                hashedPassword=hashed_password,
+                firstName=first_name,
+                lastName=last_name,
+                ageRange=age_range,
+                weightRange=weight_range
+            )
+            record = await result.single()
+            return record.data()["patient"] if record else None
+
+    async def set_password_reset_token(self, email: str, reset_token: str, expiry_iso: str) -> bool:
+        """Set a password reset token and expiry on the patient node."""
+        query = """
+        MATCH (p:Patient {email: $email})
+        SET p.reset_token = $resetToken,
+            p.reset_token_expiry = datetime($expiryIso)
+        RETURN count(p) AS updated
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query, email=email, resetToken=reset_token, expiryIso=expiry_iso)
+            record = await result.single()
+            return record.data()["updated"] > 0 if record else False
+
+    async def update_patient_password_with_token(self, reset_token: str, hashed_password: str) -> bool:
+        """Update password if reset token is valid and hasn't expired."""
+        query = """
+        MATCH (p:Patient {reset_token: $resetToken})
+        WHERE p.reset_token_expiry > datetime()
+        SET p.hashed_password = $hashedPassword
+        REMOVE p.reset_token, p.reset_token_expiry
+        RETURN count(p) AS updated
+        """
+        async with self.driver.session() as session:
+            result = await session.run(query, resetToken=reset_token, hashedPassword=hashed_password)
+            record = await result.single()
+            return record.data()["updated"] > 0 if record else False
+
 
 # Singleton instance
 neo4j_service = Neo4jService()

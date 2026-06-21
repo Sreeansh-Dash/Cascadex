@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import admin, drugs, explain, graph, interactions, patient
+from .routers import auth, drugs, explain, graph, interactions, patient
 from .services.groq_service import init_groq
 from .services.neo4j_service import neo4j_service
 
@@ -47,12 +47,12 @@ app.add_middleware(
 )
 
 # --- Routes ---
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(drugs.router, prefix="/api/drugs", tags=["Drugs"])
 app.include_router(patient.router, prefix="/api/patient", tags=["Patient"])
 app.include_router(interactions.router, prefix="/api/interactions", tags=["Interactions"])
 app.include_router(graph.router, prefix="/api/graph", tags=["Graph"])
 app.include_router(explain.router, prefix="/api/explain", tags=["Explain"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 
 @app.get("/health", tags=["Health"])

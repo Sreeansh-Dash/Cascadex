@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -6,36 +6,50 @@ import { GlowButton } from '@/components/ui/GlowButton';
 import { InputField } from '@/components/ui/InputField';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useTheme } from '@/theme/ThemeContext';
+import { useAuthStore } from '@/store/auth.store';
+import { usePatientStore } from '@/store/patient.store';
 
 export default function Step2Profile() {
   const { theme } = useTheme();
   const params = useLocalSearchParams();
-  const { email, password } = params;
+  const email = typeof params.email === 'string' ? params.email : '';
+  const password = typeof params.password === 'string' ? params.password : '';
 
-  const [firstName, setFirstName] = React.useState('');
-  const [lastName, setLastName] = React.useState('');
-  const [age, setAge] = React.useState('');
-  const [weight, setWeight] = React.useState('');
-  const [errorMsg, setErrorMsg] = React.useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [age, setAge] = useState('');
+  const [weight, setWeight] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleNext = () => {
+  const { signUp, isLoading } = useAuthStore();
+  const { setCurrentPatient } = usePatientStore();
+
+  const handleFinish = async () => {
     setErrorMsg('');
     if (!firstName) {
       setErrorMsg('First Name is required');
       return;
     }
 
-    router.push({
-      pathname: '/(auth)/sign-up/step-3-role',
-      params: {
-        email,
-        password,
-        firstName,
-        lastName,
-        age,
-        weight
+    const userData = {
+      email,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+      age_range: age,
+      weight_range: weight,
+    };
+
+    const res = await signUp(userData);
+    if (res.success) {
+      const user = useAuthStore.getState().user;
+      if (user) {
+        setCurrentPatient(user.id);
+        router.replace('/(patient)/(tabs)');
       }
-    });
+    } else {
+      setErrorMsg(res.error || 'Failed to create account');
+    }
   };
 
   return (
@@ -80,11 +94,12 @@ export default function Step2Profile() {
         <View style={{ height: 24 }} />
 
         <GlowButton 
-          label="Next" 
-          onPress={handleNext} 
+          label="Create Account" 
+          onPress={handleFinish} 
           variant="primary" 
           size="lg" 
           fullWidth
+          loading={isLoading}
         />
       </View>
     </ScreenContainer>

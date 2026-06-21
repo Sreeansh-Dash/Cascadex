@@ -1,106 +1,130 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { storage } from './storage';
+import axios from 'axios';
+import { Platform } from 'react-native';
+
+const zustandStorage: StateStorage = {
+  setItem: (name, value) => storage.set(name, value),
+  getItem: (name) => storage.getString(name) ?? null,
+  removeItem: (name) => storage.remove(name),
+};
+
+// Use 10.0.2.2 for Android emulator, localhost for iOS simulator
+const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000/api' : 'http://localhost:8000/api';
+
+export const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName?: string;
-  role: 'patient' | 'clinician' | 'pharmacist' | 'admin';
-  verificationStatus: 'verified' | 'pending' | 'unverified';
-  age?: string;
-  weight?: string;
-  gender?: string;
-  bloodType?: string;
-  password?: string; // stored for local mock auth
+  first_name: string;
+  last_name?: string;
+  age_range?: string;
+  weight_range?: string;
 }
 
 interface AuthState {
   accessToken: string | null;
-  refreshToken: string | null;
   user: User | null;
-  registeredUsers: User[];
   isLoading: boolean;
-  signIn: (email: string, password: string) => { success: boolean; error?: string };
-  signUp: (userData: Omit<User, 'id' | 'verificationStatus'>) => void;
-  updateUserProfile: (updates: Partial<Omit<User, 'id' | 'email' | 'role'>>) => void;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (userData: { email: string; password: string; first_name: string; last_name?: string }) => Promise<{ success: boolean; error?: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; resetToken?: string; error?: string }>;
+  resetPassword: (token: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => void;
-  setTokens: (access: string, refresh: string) => void;
+  setToken: (access: string) => void;
 }
 
-// Initial demo user Ramesh
-const DEMO_USER: User = {
-  id: 'DEMO-PATIENT-001',
-  email: 'demo@cascadex.com',
-  password: 'password123',
-  firstName: 'Ramesh',
-  lastName: 'Sharma',
-  role: 'patient',
-  verificationStatus: 'verified',
-  age: '45',
-  weight: '70kg',
-  gender: 'Male',
-  bloodType: 'O+',
-};
-
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  refreshToken: null,
-  user: null,
-  registeredUsers: [DEMO_USER],
-  isLoading: false,
-
-  signIn: (email, password) => {
-    let result: { success: boolean; error?: string } = { success: false, error: 'Invalid email or password' };
-    
-    set((state) => {
-      const foundUser = state.registeredUsers.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-      if (foundUser) {
-        result = { success: true };
-        return {
-          accessToken: 'mock-token-' + foundUser.id,
-          user: foundUser,
-          isLoading: false
-        };
-      }
-      return state;
-    });
-
-    return result;
-  },
-
-  signUp: (userData) => {
-    const newId = 'USER-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    const newUser: User = {
-      ...userData,
-      id: newId,
-      verificationStatus: 'verified',
-    };
-
-    set((state) => ({
-      registeredUsers: [...state.registeredUsers, newUser],
-      user: newUser,
-      accessToken: 'mock-token-' + newId,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      user: null,
       isLoading: false,
-    }));
-  },
 
-  updateUserProfile: (updates) => {
-    set((state) => {
-      if (!state.user) return state;
-      const updatedUser = { ...state.user, ...updates };
-      const updatedRegistered = state.registeredUsers.map((u) =>
-        u.id === state.user?.id ? { ...u, ...updates } : u
-      );
-      return {
-        user: updatedUser,
-        registeredUsers: updatedRegistered,
-      };
-    });
-  },
+      signIn: async (email, password) => {
+        set({ isLoading: true });
+        try {
+          const res = await apiClient.post('/auth/login', { email, password });
+          const { access_token, user } = res.data;
+          
+          // Apply token to future requests
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
-  signOut: () => set({ accessToken: null, refreshToken: null, user: null, isLoading: false }),
-  setTokens: (access, refresh) => set({ accessToken: access, refreshToken: refresh }),
-}));
+          set({ accessToken: access_token, user, isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          set({ isLoading: false });
+          const msg = error.response?.data?.detail || 'Failed to sign in. Please try again.';
+          return { success: false, error: msg };
+        }
+      },
 
+      signUp: async (userData) => {
+        set({ isLoading: true });
+        try {
+          const res = await apiClient.post('/auth/register', userData);
+          const { access_token, user } = res.data;
+          
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+
+          set({ accessToken: access_token, user, isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          set({ isLoading: false });
+          const msg = error.response?.data?.detail || 'Registration failed.';
+          return { success: false, error: msg };
+        }
+      },
+
+      forgotPassword: async (email) => {
+        set({ isLoading: true });
+        try {
+          const res = await apiClient.post('/auth/forgot-password', { email });
+          set({ isLoading: false });
+          // In a real app we wouldn't return the token here, but we do for simulation purposes
+          return { success: true, resetToken: res.data.reset_token };
+        } catch (error: any) {
+          set({ isLoading: false });
+          const msg = error.response?.data?.detail || 'Failed to send reset link.';
+          return { success: false, error: msg };
+        }
+      },
+
+      resetPassword: async (token, newPassword) => {
+        set({ isLoading: true });
+        try {
+          await apiClient.post('/auth/reset-password', { token, new_password: newPassword });
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          set({ isLoading: false });
+          const msg = error.response?.data?.detail || 'Invalid or expired token.';
+          return { success: false, error: msg };
+        }
+      },
+
+      signOut: () => {
+        delete apiClient.defaults.headers.common['Authorization'];
+        set({ accessToken: null, user: null, isLoading: false });
+      },
+
+      setToken: (access) => set({ accessToken: access }),
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => zustandStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken) {
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${state.accessToken}`;
+        }
+      },
+    }
+  )
+);

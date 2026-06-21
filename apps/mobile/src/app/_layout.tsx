@@ -38,7 +38,6 @@ function AppContent() {
       >
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(patient)" />
-        <Stack.Screen name="(clinician)" />
       </Stack>
     </>
   );

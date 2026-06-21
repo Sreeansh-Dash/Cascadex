@@ -67,3 +67,6 @@ packages/graph/backups/
 
 # --- Build artifacts ---
 *.tgz
+
+# --- Bug Reports ---
+bugreport-*

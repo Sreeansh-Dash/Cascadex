@@ -8,9 +8,5 @@ export default function Index() {
     return <Redirect href="/(auth)" />;
   }
 
-  if (user.role === 'pharmacist') {
-    return <Redirect href="/(clinician)/(tabs)" />;
-  }
-
   return <Redirect href="/(patient)/(tabs)" />;
 }

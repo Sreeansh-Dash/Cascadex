@@ -19,7 +19,7 @@ export default function SignInScreen() {
   const { signIn } = useAuthStore();
   const { setCurrentPatient } = usePatientStore();
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     setErrorMsg('');
     if (!email || !password) {
       setErrorMsg('Please enter both email and password');
@@ -27,23 +27,18 @@ export default function SignInScreen() {
     }
     
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const res = signIn(email, password);
-      if (res.success) {
-        const user = useAuthStore.getState().user;
-        if (user) {
-          if (user.role === 'patient') {
-            setCurrentPatient(user.id);
-            router.replace('/(patient)/(tabs)');
-          } else {
-            router.replace('/(clinician)/(tabs)/dashboard');
-          }
-        }
-      } else {
-        setErrorMsg(res.error || 'Invalid credentials');
+    const res = await signIn(email, password);
+    setLoading(false);
+    
+    if (res.success) {
+      const user = useAuthStore.getState().user;
+      if (user) {
+        setCurrentPatient(user.id);
+        router.replace('/(patient)/(tabs)');
       }
-    }, 800);
+    } else {
+      setErrorMsg(res.error || 'Invalid credentials');
+    }
   };
 
   return (
@@ -81,7 +76,9 @@ export default function SignInScreen() {
         />
         
         <View style={styles.forgotPassword}>
-          <Text style={{ color: theme.colors.accent, fontFamily: theme.typography.subhead }}>Forgot Password?</Text>
+          <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
+            <Text style={{ color: theme.colors.accent, fontFamily: theme.typography.subhead }}>Forgot Password?</Text>
+          </Pressable>
         </View>
 
         <GlowButton
