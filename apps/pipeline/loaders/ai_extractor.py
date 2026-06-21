@@ -1,9 +1,10 @@
-import os
 import json
 import logging
-from groq import Groq
-from dotenv import load_dotenv
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+from groq import Groq
 
 env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -16,7 +17,7 @@ class AIExtractor:
         if not self.api_key:
             logger.warning("GROQ_API_KEY not found in environment. AI Extraction will fail.")
         self.client = Groq(api_key=self.api_key)
-        
+
     def extract_interaction_details(self, drug1: str, drug2: str, description: str) -> dict | None:
         """
         Uses Groq (Llama 3) to extract structured interaction data from an NLM text description.
@@ -37,9 +38,9 @@ class AIExtractor:
             "Estimate severity: 'critical' if it significantly increases risk of adverse effects or decreases efficacy, 'moderate' otherwise.\n"
             "Respond ONLY with valid JSON, no markdown formatting."
         )
-        
+
         user_prompt = f"Drugs: {drug1}, {drug2}\nDescription: {description}\n\nExtract JSON:"
-        
+
         try:
             response = self.client.chat.completions.create(
                 model="llama-3.1-8b-instant",
@@ -50,7 +51,7 @@ class AIExtractor:
                 temperature=0.0,
                 response_format={"type": "json_object"}
             )
-            
+
             result = json.loads(response.choices[0].message.content)
             return result
         except Exception as e:
@@ -69,9 +70,9 @@ class AIExtractor:
             "Severity must be 'critical' or 'moderate'.\n"
             "Respond ONLY with valid JSON in the requested schema, no markdown."
         )
-        
+
         user_prompt = f"Generate 5 interactions for the drug: {drug}\n\nJSON Schema:\n{{\"interactions\": [{{\"perpetrator\": \"\", \"victim\": \"\", \"enzyme\": \"\", \"mechanism\": \"\", \"severity\": \"\", \"description\": \"\"}}]}}"
-        
+
         try:
             response = self.client.chat.completions.create(
                 model="llama-3.1-8b-instant",
@@ -82,7 +83,7 @@ class AIExtractor:
                 temperature=0.1,
                 response_format={"type": "json_object"}
             )
-            
+
             result = json.loads(response.choices[0].message.content)
             return result.get("interactions", [])
         except Exception as e:

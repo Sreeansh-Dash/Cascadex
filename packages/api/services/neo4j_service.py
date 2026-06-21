@@ -501,7 +501,7 @@ class Neo4jService:
             return record.data()["patient"] if record else None
 
     async def create_patient_user(
-        self, id: str, email: str, hashed_password: str, 
+        self, id: str, email: str, hashed_password: str,
         first_name: str, last_name: str = "", age_range: str = "", weight_range: str = ""
     ) -> dict:
         """Create a new patient with authentication credentials."""
