@@ -9,9 +9,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 
 from ..services.neo4j_service import neo4j_service
-
-router = APIRouter(prefix="/auth", tags=["auth"])
-
+router = APIRouter(tags=["auth"])
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -25,6 +23,8 @@ class UserCreate(BaseModel):
     password: str
     first_name: str
     last_name: str = ""
+    age_range: str = ""
+    weight_range: str = ""
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -46,6 +46,7 @@ def create_access_token(data: dict):
 
 @router.post("/register")
 async def register(user: UserCreate):
+    user.email = user.email.lower()
     existing = await neo4j_service.get_patient_by_email(user.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -58,7 +59,9 @@ async def register(user: UserCreate):
         email=user.email,
         hashed_password=hashed_password,
         first_name=user.first_name,
-        last_name=user.last_name
+        last_name=user.last_name,
+        age_range=user.age_range,
+        weight_range=user.weight_range
     )
 
     if not new_user:
@@ -79,6 +82,7 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(user: UserLogin):
+    user.email = user.email.lower()
     db_user = await neo4j_service.get_patient_by_email(user.email)
     if not db_user or not db_user.get("hashed_password"):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -100,6 +104,7 @@ async def login(user: UserLogin):
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
+    req.email = req.email.lower()
     db_user = await neo4j_service.get_patient_by_email(req.email)
     if not db_user:
         # Don't reveal if user exists or not for security
