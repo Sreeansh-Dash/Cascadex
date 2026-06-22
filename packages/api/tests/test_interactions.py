@@ -62,8 +62,7 @@ async def test_gold_standard_fluoxetine_cyp2d6_codeine(client):
             break
 
     assert gold_hit is not None, (
-        "GOLD STANDARD FAILED — Fluoxetine→CYP2D6→Codeine chain not found. "
-        f"Got interactions: {interactions}"
+        f"GOLD STANDARD FAILED — Fluoxetine→CYP2D6→Codeine chain not found. Got interactions: {interactions}"
     )
 
 

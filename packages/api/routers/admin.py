@@ -135,9 +135,7 @@ async def prescribe_check(data: PrescribeCheckRequest):
 
     Used by Base44 Prescribe-Check Tool.
     """
-    new_interactions = await neo4j_service.simulate_add_drug(
-        data.patient_id, data.new_drug_id
-    )
+    new_interactions = await neo4j_service.simulate_add_drug(data.patient_id, data.new_drug_id)
 
     # Classify risk based on interaction strengths
     has_strong = any(i.get("strength") == "strong" for i in new_interactions)

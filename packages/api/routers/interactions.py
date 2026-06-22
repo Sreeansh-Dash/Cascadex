@@ -27,7 +27,9 @@ async def get_chain_detail(chain_id: str):
     """
     parts = chain_id.split(":")
     if len(parts) != 3:
-        raise HTTPException(status_code=400, detail="Invalid chain ID format. Use 'perpetrator_id:victim_id:enzyme_name'")
+        raise HTTPException(
+            status_code=400, detail="Invalid chain ID format. Use 'perpetrator_id:victim_id:enzyme_name'"
+        )
 
     perpetrator_id, victim_id, enzyme_name = parts
     chain_data = await neo4j_service.get_chain_detail(perpetrator_id, victim_id, enzyme_name)

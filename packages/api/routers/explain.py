@@ -47,9 +47,7 @@ async def explain_chain(chain_id: str):
     perpetrator_id, victim_id, enzyme_name = parts
 
     # Fetch real chain data from Neo4j graph traversal
-    chain_data = await neo4j_service.get_chain_detail(
-        perpetrator_id, victim_id, enzyme_name
-    )
+    chain_data = await neo4j_service.get_chain_detail(perpetrator_id, victim_id, enzyme_name)
     if not chain_data:
         raise HTTPException(
             status_code=404,
@@ -85,9 +83,7 @@ async def stream_chain_explanation(chain_id: str):
     perpetrator_id, victim_id, enzyme_name = parts
 
     # Fetch chain data from Neo4j
-    chain_data = await neo4j_service.get_chain_detail(
-        perpetrator_id, victim_id, enzyme_name
-    )
+    chain_data = await neo4j_service.get_chain_detail(perpetrator_id, victim_id, enzyme_name)
     if not chain_data:
         raise HTTPException(
             status_code=404,

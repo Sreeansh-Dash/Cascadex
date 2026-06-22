@@ -55,9 +55,10 @@ def mock_simulate_add_drug():
 # -----------------------------------------------------------------------
 @pytest.mark.asyncio(loop_scope="session")
 async def test_list_patients(client, mock_all_patients, mock_patient_alerts):
-    with patch("packages.api.routers.admin.neo4j_service.get_all_patients", new_callable=AsyncMock) as m_all, \
-         patch("packages.api.routers.admin.neo4j_service.get_patient_alerts", new_callable=AsyncMock) as m_alerts:
-
+    with (
+        patch("packages.api.routers.admin.neo4j_service.get_all_patients", new_callable=AsyncMock) as m_all,
+        patch("packages.api.routers.admin.neo4j_service.get_patient_alerts", new_callable=AsyncMock) as m_alerts,
+    ):
         m_all.return_value = mock_all_patients
         m_alerts.return_value = mock_patient_alerts  # 1 critical, 1 moderate -> risk score 13
 
@@ -136,9 +137,10 @@ async def test_prescribe_check_safe(client):
 # -----------------------------------------------------------------------
 @pytest.mark.asyncio(loop_scope="session")
 async def test_admin_stats(client, mock_all_patients, mock_high_risk_patients):
-    with patch("packages.api.routers.admin.neo4j_service.get_all_patients", new_callable=AsyncMock) as m_all, \
-         patch("packages.api.routers.admin.neo4j_service.get_high_risk_patients", new_callable=AsyncMock) as m_hr:
-
+    with (
+        patch("packages.api.routers.admin.neo4j_service.get_all_patients", new_callable=AsyncMock) as m_all,
+        patch("packages.api.routers.admin.neo4j_service.get_high_risk_patients", new_callable=AsyncMock) as m_hr,
+    ):
         m_all.return_value = mock_all_patients
         m_hr.return_value = mock_high_risk_patients
 

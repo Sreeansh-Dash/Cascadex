@@ -57,10 +57,12 @@ async def get_drug_interactions_rxnorm(rxcui: str) -> list:
                 for group in data.get("interactionTypeGroup", []):
                     for itype in group.get("interactionType", []):
                         for pair in itype.get("interactionPair", []):
-                            interactions.append({
-                                "description": pair.get("description"),
-                                "severity": pair.get("severity"),
-                            })
+                            interactions.append(
+                                {
+                                    "description": pair.get("description"),
+                                    "severity": pair.get("severity"),
+                                }
+                            )
                 return interactions
             return []
         except httpx.HTTPError:

@@ -12,12 +12,14 @@ from pydantic import BaseModel, Field
 
 class PrescribeCheckRequest(BaseModel):
     """Request body for the prescribe-check simulation tool."""
+
     patient_id: str = Field(..., description="Patient UUID")
     new_drug_id: str = Field(..., description="DrugBank ID of drug to simulate adding")
 
 
 class PrescribeCheckResponse(BaseModel):
     """Response from prescribe-check simulation."""
+
     patient_id: str
     new_drug_id: str
     new_interactions_count: int = 0
@@ -28,6 +30,7 @@ class PrescribeCheckResponse(BaseModel):
 
 class AdminStats(BaseModel):
     """Dashboard-level statistics for the pharmacist portal."""
+
     total_patients: int = 0
     total_interactions: int = 0
     high_risk_patients: int = 0
@@ -36,6 +39,7 @@ class AdminStats(BaseModel):
 
 class AdminPatientSummary(BaseModel):
     """Patient summary for the portal patient list table."""
+
     id: str
     age_range: Optional[str] = None
     weight_range: Optional[str] = None
@@ -49,6 +53,7 @@ class AdminPatientSummary(BaseModel):
 
 class AdminPatientDetail(BaseModel):
     """Detailed patient view for the portal, includes graph + meds + alerts."""
+
     patient_id: str
     graph: dict = Field(default_factory=dict)
     medications: list = Field(default_factory=list)

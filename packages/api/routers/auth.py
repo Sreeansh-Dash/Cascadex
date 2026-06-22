@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 
 from ..services.neo4j_service import neo4j_service
+
 router = APIRouter(tags=["auth"])
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -18,6 +19,7 @@ SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "supersecretkey_for_development_on
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
 
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -26,16 +28,20 @@ class UserCreate(BaseModel):
     age_range: str = ""
     weight_range: str = ""
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
 
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -43,6 +49,7 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -61,7 +68,7 @@ async def register(user: UserCreate):
         first_name=user.first_name,
         last_name=user.last_name,
         age_range=user.age_range,
-        weight_range=user.weight_range
+        weight_range=user.weight_range,
     )
 
     if not new_user:
@@ -76,9 +83,10 @@ async def register(user: UserCreate):
             "id": new_user["id"],
             "email": new_user["email"],
             "first_name": new_user["first_name"],
-            "last_name": new_user.get("last_name", "")
-        }
+            "last_name": new_user.get("last_name", ""),
+        },
     }
+
 
 @router.post("/login")
 async def login(user: UserLogin):
@@ -98,9 +106,10 @@ async def login(user: UserLogin):
             "id": db_user["id"],
             "email": db_user["email"],
             "first_name": db_user["first_name"],
-            "last_name": db_user.get("last_name", "")
-        }
+            "last_name": db_user.get("last_name", ""),
+        },
     }
+
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
@@ -121,8 +130,9 @@ async def forgot_password(req: ForgotPasswordRequest):
     return {
         "message": "Reset token generated successfully.",
         "simulated_deep_link": f"cascadex://reset-password?token={reset_token}",
-        "reset_token": reset_token
+        "reset_token": reset_token,
     }
+
 
 @router.post("/reset-password")
 async def reset_password(req: ResetPasswordRequest):

@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Cascadex API",
     description="Drug metabolic pathway intelligence via graph traversal. "
-                "Detects multi-hop drug interaction chains using Neo4j AuraDB.",
+    "Detects multi-hop drug interaction chains using Neo4j AuraDB.",
     version="1.0.0",
     lifespan=lifespan,
 )

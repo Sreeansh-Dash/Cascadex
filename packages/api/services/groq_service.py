@@ -79,14 +79,14 @@ FALLBACK_EXPLANATION = (
 )
 
 FALLBACK_DRUG_EXPLANATION = (
-    "AI explanation is temporarily unavailable. "
-    "Ask your pharmacist for information about this medication."
+    "AI explanation is temporarily unavailable. Ask your pharmacist for information about this medication."
 )
 
 
 # ---------------------------------------------------------------------------
 # Core explanation functions (with caching and error handling)
 # ---------------------------------------------------------------------------
+
 
 async def explain_interaction_chain(chain_data: dict, chain_id: str = None) -> str:
     """
@@ -107,12 +107,14 @@ async def explain_interaction_chain(chain_data: dict, chain_id: str = None) -> s
 
     try:
         response = await groq_client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": INTERACTION_EXPLAIN_PROMPT.format(
-                    chain_json=json.dumps(chain_data, indent=2, default=str)
-                )
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": INTERACTION_EXPLAIN_PROMPT.format(
+                        chain_json=json.dumps(chain_data, indent=2, default=str)
+                    ),
+                }
+            ],
             model="llama-3.1-70b-versatile",
             max_tokens=200,
             temperature=0.3,  # Low temperature for clinical accuracy
@@ -145,12 +147,12 @@ async def explain_drug(drug_data: dict, drug_id: str = None) -> str:
 
     try:
         response = await groq_client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": DRUG_EXPLAIN_PROMPT.format(
-                    drug_json=json.dumps(drug_data, indent=2, default=str)
-                )
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": DRUG_EXPLAIN_PROMPT.format(drug_json=json.dumps(drug_data, indent=2, default=str)),
+                }
+            ],
             model="llama-3.1-70b-versatile",
             max_tokens=120,
             temperature=0.3,
@@ -182,13 +184,14 @@ async def explain_blast_radius(enzyme_name: str, blast_data: list) -> str:
 
     try:
         response = await groq_client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": BLAST_RADIUS_PROMPT.format(
-                    enzyme_name=enzyme_name,
-                    blast_json=json.dumps(blast_data, indent=2, default=str)
-                )
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": BLAST_RADIUS_PROMPT.format(
+                        enzyme_name=enzyme_name, blast_json=json.dumps(blast_data, indent=2, default=str)
+                    ),
+                }
+            ],
             model="llama-3.1-70b-versatile",
             max_tokens=250,
             temperature=0.3,
@@ -206,6 +209,7 @@ async def explain_blast_radius(enzyme_name: str, blast_data: list) -> str:
 # Streaming explanation (for typewriter effect on mobile)
 # ---------------------------------------------------------------------------
 
+
 async def stream_interaction_explanation(chain_data: dict) -> AsyncGenerator[str, None]:
     """
     Async generator that yields Groq response chunks for SSE streaming.
@@ -217,12 +221,14 @@ async def stream_interaction_explanation(chain_data: dict) -> AsyncGenerator[str
 
     try:
         stream = await groq_client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": INTERACTION_EXPLAIN_PROMPT.format(
-                    chain_json=json.dumps(chain_data, indent=2, default=str)
-                )
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": INTERACTION_EXPLAIN_PROMPT.format(
+                        chain_json=json.dumps(chain_data, indent=2, default=str)
+                    ),
+                }
+            ],
             model="llama-3.1-70b-versatile",
             max_tokens=200,
             temperature=0.3,

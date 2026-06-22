@@ -19,9 +19,7 @@ class Neo4jService:
 
     async def connect(self, uri: str, user: str, password: str):
         """Initialize the Neo4j async driver."""
-        self.driver = AsyncGraphDatabase.driver(
-            uri, auth=(user, password)
-        )
+        self.driver = AsyncGraphDatabase.driver(uri, auth=(user, password))
         # Verify connectivity
         async with self.driver.session() as session:
             await session.run("RETURN 1")
@@ -215,8 +213,7 @@ class Neo4jService:
             return record.data()["patient"] if record else None
 
     async def add_patient_medication(
-        self, patient_id: str, drugbank_id: str,
-        dose: str = None, frequency: str = None, indication: str = None
+        self, patient_id: str, drugbank_id: str, dose: str = None, frequency: str = None, indication: str = None
     ) -> dict:
         """Add a TAKES relationship between patient and drug."""
         query = """
@@ -292,9 +289,7 @@ class Neo4jService:
     # ----------------------------------------------------------------
     # CHAIN DETAIL: Full interaction chain for a specific drug pair
     # ----------------------------------------------------------------
-    async def get_chain_detail(
-        self, perpetrator_id: str, victim_id: str, enzyme_name: str
-    ) -> dict | None:
+    async def get_chain_detail(self, perpetrator_id: str, victim_id: str, enzyme_name: str) -> dict | None:
         """
         Full chain traversal for a specific drug-drug interaction.
 
@@ -341,9 +336,7 @@ class Neo4jService:
                 return None
             data = record.data()
             # Filter out null entries from downstream_effects
-            data["downstream_effects"] = [
-                e for e in data.get("downstream_effects", []) if e is not None
-            ]
+            data["downstream_effects"] = [e for e in data.get("downstream_effects", []) if e is not None]
             return data
 
     # ----------------------------------------------------------------
@@ -501,8 +494,14 @@ class Neo4jService:
             return record.data()["patient"] if record else None
 
     async def create_patient_user(
-        self, id: str, email: str, hashed_password: str,
-        first_name: str, last_name: str = "", age_range: str = "", weight_range: str = ""
+        self,
+        id: str,
+        email: str,
+        hashed_password: str,
+        first_name: str,
+        last_name: str = "",
+        age_range: str = "",
+        weight_range: str = "",
     ) -> dict:
         """Create a new patient with authentication credentials."""
         query = """
@@ -525,7 +524,7 @@ class Neo4jService:
                 firstName=first_name,
                 lastName=last_name,
                 ageRange=age_range,
-                weightRange=weight_range
+                weightRange=weight_range,
             )
             record = await result.single()
             return record.data()["patient"] if record else None

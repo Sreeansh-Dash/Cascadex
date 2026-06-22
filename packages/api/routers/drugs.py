@@ -20,6 +20,7 @@ async def lookup_drug(name: str):
         raise HTTPException(status_code=404, detail=f"No drug found matching '{name}'")
     return results
 
+
 @router.get("/search")
 async def search_drugs(q: str):
     """Search for drugs via fulltext index. Returns empty array if none found."""

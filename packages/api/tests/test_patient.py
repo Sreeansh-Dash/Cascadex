@@ -133,6 +133,4 @@ async def test_alerts_have_severity_field(client):
 
     for alert in alerts:
         assert "severity" in alert, f"Alert missing 'severity': {alert}"
-        assert alert["severity"] in {"critical", "moderate", "minor"}, (
-            f"Unexpected severity value: {alert['severity']}"
-        )
+        assert alert["severity"] in {"critical", "moderate", "minor"}, f"Unexpected severity value: {alert['severity']}"
