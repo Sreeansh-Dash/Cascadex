@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 
+from ..config import get_settings
 from ..services.neo4j_service import neo4j_service
 
 router = APIRouter(tags=["auth"])
@@ -15,7 +16,6 @@ router = APIRouter(tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT config
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "supersecretkey_for_development_only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
 
@@ -47,7 +47,8 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    settings = get_settings()
+    encoded_jwt = jwt.encode(to_encode, settings.api_secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
 

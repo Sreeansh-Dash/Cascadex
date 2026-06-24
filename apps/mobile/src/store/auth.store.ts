@@ -9,6 +9,17 @@ const zustandStorage: StateStorage = {
   removeItem: (name) => storage.remove(name),
 };
 
+const getErrorMessage = (error: any, defaultMsg: string) => {
+  if (error.code === 'ECONNABORTED' || !error.response) {
+    return 'The server is waking up or unreachable. Please check your connection and try again in 30 seconds.';
+  }
+  const status = error.response?.status;
+  if (status === 401) return 'Invalid email or password.';
+  if (status === 400 || status === 409) return error.response?.data?.detail || 'Invalid request.';
+  if (status >= 500) return 'Server error. Please try again.';
+  return error.response?.data?.detail || defaultMsg;
+};
+
 export { apiClient };
 
 export interface User {
@@ -24,8 +35,8 @@ interface AuthState {
   accessToken: string | null;
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (userData: { email: string; password: string; first_name: string; last_name?: string }) => Promise<{ success: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; isTimeout?: boolean }>;
+  signUp: (userData: { email: string; password: string; first_name: string; last_name?: string }) => Promise<{ success: boolean; error?: string; isTimeout?: boolean }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; resetToken?: string; error?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => void;
@@ -52,8 +63,8 @@ export const useAuthStore = create<AuthState>()(
           return { success: true };
         } catch (error: any) {
           set({ isLoading: false });
-          const msg = error.response?.data?.detail || 'Failed to sign in. Please try again.';
-          return { success: false, error: msg };
+          const msg = getErrorMessage(error, 'Failed to sign in. Please try again.');
+          return { success: false, error: msg, isTimeout: !error.response };
         }
       },
 
@@ -69,8 +80,8 @@ export const useAuthStore = create<AuthState>()(
           return { success: true };
         } catch (error: any) {
           set({ isLoading: false });
-          const msg = error.response?.data?.detail || 'Registration failed.';
-          return { success: false, error: msg };
+          const msg = getErrorMessage(error, 'Registration failed.');
+          return { success: false, error: msg, isTimeout: !error.response };
         }
       },
 

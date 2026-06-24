@@ -15,12 +15,14 @@ export default function SignInScreen() {
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState('');
+  const [isTimeout, setIsTimeout] = React.useState(false);
   
   const { signIn } = useAuthStore();
   const { setCurrentPatient } = usePatientStore();
 
   const handleSignIn = async () => {
     setErrorMsg('');
+    setIsTimeout(false);
     if (!email || !password) {
       setErrorMsg('Please enter both email and password');
       return;
@@ -38,6 +40,7 @@ export default function SignInScreen() {
       }
     } else {
       setErrorMsg(res.error || 'Invalid credentials');
+      setIsTimeout(res.isTimeout || false);
     }
   };
 
@@ -51,7 +54,7 @@ export default function SignInScreen() {
 
       <View style={styles.form}>
         {errorMsg ? (
-          <Text style={[styles.errorText, { color: theme.colors.dangerStrong, fontFamily: theme.typography.subhead }]}>
+          <Text style={[styles.errorText, { color: isTimeout ? theme.colors.warnStrong : theme.colors.dangerStrong, fontFamily: theme.typography.subhead }]}>
             {errorMsg}
           </Text>
         ) : null}
@@ -82,7 +85,7 @@ export default function SignInScreen() {
         </View>
 
         <GlowButton
-          label="Sign In"
+          label={isTimeout ? "Retry Sign In" : "Sign In"}
           onPress={handleSignIn}
           variant="primary"
           size="lg"
