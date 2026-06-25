@@ -1,6 +1,8 @@
 """Quick validation of seeded Neo4j data."""
-import asyncio, os
+import asyncio
+import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from neo4j import AsyncGraphDatabase
 

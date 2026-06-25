@@ -12,13 +12,14 @@ Includes the 3 gold-standard interaction pairs from master_plan.md:
 
 Usage:
   cd packages/graph
-  .\venv\Scripts\Activate.ps1
+  .\venv\\Scripts\\Activate.ps1
   python seed_demo_data.py
 """
 
-import os
 import asyncio
+import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from neo4j import AsyncGraphDatabase
 

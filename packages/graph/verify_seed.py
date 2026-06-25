@@ -2,6 +2,7 @@
 import asyncio
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from neo4j import AsyncGraphDatabase
 
@@ -14,7 +15,7 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
 
 async def verify():
-    print(f"Connecting to Neo4j...")
+    print("Connecting to Neo4j...")
     driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     async with driver.session() as session:
         # Count nodes
