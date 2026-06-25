@@ -1,18 +1,32 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Alert } from 'react-native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { useTheme } from '@/theme/ThemeContext';
 import { GlowButton } from '@/components/ui/GlowButton';
-import { useAuthStore } from '@/store/auth.store';
-import { router } from 'expo-router';
+import { useAppStore } from '@/store/app.store';
+import { usePatientStore } from '@/store/patient.store';
 
 export default function PatientProfile() {
   const { theme } = useTheme();
-  const { user, signOut } = useAuthStore();
+  const { patientId, displayName, appVersion, resetAppData } = useAppStore();
+  const { clearPatientData } = usePatientStore();
 
-  const handleSignOut = () => {
-    signOut();
-    router.replace('/(auth)');
+  const handleResetData = () => {
+    Alert.alert(
+      'Reset App Data',
+      'This will clear all your medications and history, and generate a new device ID. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            clearPatientData();
+            resetAppData();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -20,42 +34,34 @@ export default function PatientProfile() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.textPrimary, fontFamily: theme.typography.display }]}>Profile</Text>
       </View>
-      
+
       <View style={[styles.card, { backgroundColor: theme.colors.bgElevated, borderColor: theme.colors.bgBorder }]}>
         <View style={styles.viewDetails}>
-          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono }]}>Full Name</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono }]}>Display Name</Text>
           <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.heading }]}>
-            {user?.first_name} {user?.last_name || ''}
+            {displayName || 'Anonymous User'}
           </Text>
-          
-          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>Patient ID</Text>
-          <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.heading }]}>{user?.id || 'DEMO-PATIENT-001'}</Text>
 
-          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>Email Address</Text>
-          <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.body }]}>{user?.email}</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>Device Patient ID</Text>
+          <Text style={[styles.idValue, { color: theme.colors.textPrimary, fontFamily: theme.typography.mono }]} numberOfLines={1} ellipsizeMode="middle">
+            {patientId}
+          </Text>
 
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>Age Range</Text>
-              <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.body }]}>
-                {user?.age_range || 'Not provided'}
-              </Text>
-            </View>
-            
-            <View style={styles.col}>
-              <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>Weight Range</Text>
-              <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.body }]}>
-                {user?.weight_range || 'Not provided'}
-              </Text>
-            </View>
+          <Text style={[styles.label, { color: theme.colors.textSecondary, fontFamily: theme.typography.mono, marginTop: 16 }]}>App Version</Text>
+          <Text style={[styles.value, { color: theme.colors.textPrimary, fontFamily: theme.typography.body }]}>{appVersion}</Text>
+
+          <View style={[styles.privacyNote, { backgroundColor: theme.colors.bgPrimary, borderColor: theme.colors.bgBorder }]}>
+            <Text style={[styles.privacyText, { color: theme.colors.textSecondary, fontFamily: theme.typography.body }]}>
+              🔒 Cascadex is fully local-first. No account, no email, no server login. Your data stays on your device.
+            </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.signOutBtn}>
+      <View style={styles.resetBtn}>
         <GlowButton
-          label="Sign Out"
-          onPress={handleSignOut}
+          label="Reset App Data"
+          onPress={handleResetData}
           variant="destructive"
           size="md"
           fullWidth
@@ -90,16 +96,24 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 18,
   },
-  row: {
-    flexDirection: 'row',
-  },
-  col: {
-    flex: 1,
+  idValue: {
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
   viewDetails: {
     gap: 2,
   },
-  signOutBtn: {
+  privacyNote: {
+    marginTop: 20,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  privacyText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  resetBtn: {
     marginBottom: 40,
-  }
+  },
 });

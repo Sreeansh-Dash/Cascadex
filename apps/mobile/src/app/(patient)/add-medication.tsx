@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { usePatientStore } from '@/store/patient.store';
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { apiClient } from '@/store/auth.store';
+import { api as apiClient } from '@/api/client';
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {

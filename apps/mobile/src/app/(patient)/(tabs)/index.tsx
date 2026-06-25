@@ -1,30 +1,27 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { DangerBadge } from '@/components/ui/DangerBadge';
-import { useAuthStore } from '@/store/auth.store';
+import { useAppStore } from '@/store/app.store';
 import { usePatientStore } from '@/store/patient.store';
 import { DrugGraphCanvas } from '@/components/graph/DrugGraphCanvas';
 import { router } from 'expo-router';
 
 export default function PatientHomeGraph() {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuthStore();
-  const { medications, graph, alerts, setCurrentPatient } = usePatientStore();
+  const { displayName } = useAppStore();
+  const { medications, graph, alerts } = usePatientStore();
 
-  useEffect(() => {
-    // If user is logged in, ensure we initialize their patient profile store
-    if (user && !usePatientStore.getState().currentPatientId) {
-      setCurrentPatient(user.id);
-    }
-  }, [user]);
-
-  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-  const moderateCount = alerts.filter(a => a.severity === 'moderate').length;
+  const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
+  const moderateCount = alerts.filter((a) => a.severity === 'moderate').length;
   const safeCount = Math.max(0, medications.length - criticalCount - moderateCount);
+
+  // Derive avatar initial from display name or fallback
+  const avatarInitial = (displayName || 'U')[0].toUpperCase();
+  const greetingName = displayName || 'there';
 
   return (
     <ScreenContainer scrollable={false} padding={false} hasTabBar={true}>
@@ -32,20 +29,18 @@ export default function PatientHomeGraph() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(user?.first_name || 'R')[0].toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{avatarInitial}</Text>
           </View>
           <Text style={[styles.greeting, { color: theme.colors.textPrimary, fontFamily: theme.typography.bodyMed }]}>
-            Namaste, {user?.first_name || 'Ramesh'}
+            Namaste, {greetingName}
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <Ionicons 
-            name="notifications-outline" 
-            size={24} 
-            color={theme.colors.textPrimary} 
-            style={styles.icon} 
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color={theme.colors.textPrimary}
+            style={styles.icon}
             onPress={() => router.push('/(patient)/notifications')}
           />
           <Ionicons name="moon-outline" size={24} color={theme.colors.textPrimary} style={styles.icon} onPress={toggleTheme} />

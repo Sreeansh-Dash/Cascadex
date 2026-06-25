@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import admin, auth, drugs, explain, graph, interactions, patient
+from .routers import admin, drugs, explain, graph, interactions, patient
 from .services.groq_service import init_groq
 from .services.neo4j_service import neo4j_service
 
@@ -47,7 +47,7 @@ app.add_middleware(
 )
 
 # --- Routes ---
-app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+# Auth removed — app is local-first, no server accounts required
 app.include_router(drugs.router, prefix="/api/drugs", tags=["Drugs"])
 app.include_router(patient.router, prefix="/api/patient", tags=["Patient"])
 app.include_router(interactions.router, prefix="/api/interactions", tags=["Interactions"])

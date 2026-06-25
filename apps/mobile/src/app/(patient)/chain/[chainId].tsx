@@ -6,7 +6,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TypewriterText } from '@/components/ui/TypewriterText';
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { apiClient } from '@/store/auth.store';
+import { api as apiClient } from '@/api/client';
 
 export default function ChainDetails() {
   const { theme } = useTheme();

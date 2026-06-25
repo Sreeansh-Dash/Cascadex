@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
@@ -10,7 +10,6 @@ import { IBMPlexSans_300Light, IBMPlexSans_400Regular, IBMPlexSans_500Medium, IB
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
-import { useAuthStore } from '@/store/auth.store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +24,6 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const { theme } = useTheme();
-  // Here we would normally check auth and redirect, but Expo Router handles that via layout groups
   return (
     <>
       <StatusBar style={theme.colors.statusBar as any} backgroundColor={theme.colors.bgPrimary} />
@@ -36,7 +34,6 @@ function AppContent() {
           animation: 'fade',
         }}
       >
-        <Stack.Screen name="(auth)" />
         <Stack.Screen name="(patient)" />
       </Stack>
     </>
