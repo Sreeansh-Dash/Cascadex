@@ -11,7 +11,7 @@ jobs:
   # Gate: only deploy if CI passes
   ci:
     name: Run CI First
-    uses: ./.github/workflows/backend-ci.yml
+    uses: Sreeansh-Dash/Cascadex/.github/workflows/backend-ci.yml@main
     secrets: inherit
 
   deploy:
